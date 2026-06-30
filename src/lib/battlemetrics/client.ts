@@ -47,7 +47,7 @@ type BattlemetricsResponse = {
   included?: BattlemetricsPlayerResource[];
 };
 
-const apiBaseUrl = 'https://api.battlemetrics.com';
+const apiBaseUrl = '/api/battlemetrics';
 
 export async function getPopularRustServers(limit = 6) {
   const params = new URLSearchParams({

@@ -6,19 +6,20 @@ voice/push alert foundations.
 
 ## Current phase
 
-Phase 2 foundation:
+Phase 3 hardening:
 
-- Astro 7 with strict TypeScript.
-- React islands for interactive app surfaces.
-- Tailwind CSS 4.
-- Supabase client prepared through typed environment variables.
+- Astro 7 with strict TypeScript and React islands for interactive surfaces.
+- Supabase Auth with email/password and Google OAuth entry points.
+- Supabase schema, RLS, grants, default user intelligence and dashboard settings.
+- Guest mode keeps all tracking in memory.
+- Registered users persist favorites, tracked players, notes, tags and dashboard settings.
+- BattleMetrics is accessed through an internal server API with short-lived cache and basic rate limiting.
+- RustMaps proxy with HTTP cache headers.
 - Spanish and English dictionaries.
 - PWA manifest and service worker setup through Vite PWA.
-- First dashboard and login surfaces.
-- Docker, Nixpacks and Coolify notes.
+- Docker, Nixpacks and Coolify deployment files.
 
-Steam auth is intentionally postponed. Google and email/password are prepared
-through Supabase Auth once the Supabase project is created.
+Steam auth is intentionally postponed until the first registered-user workflow is stable.
 
 ## Setup
 
@@ -36,8 +37,21 @@ PUBLIC_SUPABASE_ANON_KEY=
 ```
 
 `BATTLEMETRICS_API_KEY` is optional for now. The first integration should start
-with public BattleMetrics endpoints and move the key into Edge Functions only if
-rate limits or private endpoints require it.
+with public BattleMetrics endpoints through the internal API proxy and move the
+key into server/Edge Function secrets only if rate limits or private endpoints
+require it.
+
+## Supabase
+
+Run migrations in order:
+
+```text
+supabase/migrations/0001_core_schema.sql
+supabase/migrations/0002_phase_2_3_hardening.sql
+```
+
+`0002_phase_2_3_hardening.sql` is required for PostgREST grants, user settings
+and default tags/groups on new profiles.
 
 ## Scripts
 

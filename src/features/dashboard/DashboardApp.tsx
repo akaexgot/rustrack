@@ -30,8 +30,22 @@ import {
 } from '@/lib/battlemetrics/client';
 import { popularServers } from '@/lib/battlemetrics/mock';
 import type { ConnectedPlayer, ServerSummary } from '@/lib/battlemetrics/types';
+import {
+  defaultAlertSettings,
+  defaultUiSettings,
+  loadDashboardState,
+  removePlayerTag,
+  saveDashboardSettings,
+  saveFavoriteServer,
+  savePlayerNote,
+  savePlayerTag,
+  saveTrackedPlayer,
+  type DashboardAlertSettings,
+  type DashboardUiSettings,
+} from '@/lib/dashboard/persistence';
 import type { Dictionary, Locale } from '@/lib/i18n/dictionaries';
 import { localizedPath } from '@/lib/i18n/routing';
+import { createBrowserSupabaseClient } from '@/lib/supabase/browser';
 
 type Props = {
   locale: Locale;
@@ -40,6 +54,7 @@ type Props = {
 };
 
 type GuestTrackedPlayer = {
+  dbId?: string;
   id: string;
   name: string;
   serverId: string;
@@ -50,22 +65,9 @@ type GuestTrackedPlayer = {
 
 type DashboardMode = 'server' | 'tactical' | 'settings';
 
-type AlertSettings = {
-  trackedOnline: boolean;
-  trackedOffline: boolean;
-  queue: boolean;
-  wipe: boolean;
-  notes: boolean;
-};
-
-type UiSettings = {
-  compactPlayers: boolean;
-  mapLabels: boolean;
-  autoOpenTracked: boolean;
-};
-
 const defaultTags = ['Muy activo', 'Posible aliado', 'Clan enemigo', 'Vive cerca', 'Tiene AK'];
 export default function DashboardApp({ locale, dictionary, initialQuery = '' }: Props) {
+  const supabase = useMemo(() => createBrowserSupabaseClient(), []);
   const initialServer = useMemo(() => findBestServer(initialQuery), [initialQuery]);
   const [query, setQuery] = useState(initialQuery || initialServer.ip);
   const [servers, setServers] = useState<ServerSummary[]>(popularServers);
@@ -75,24 +77,16 @@ export default function DashboardApp({ locale, dictionary, initialQuery = '' }: 
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
   const [favoriteServerIds, setFavoriteServerIds] = useState<string[]>([]);
   const [voiceEnabled, setVoiceEnabled] = useState(false);
+  const [userId, setUserId] = useState<string | null>(null);
   const [tracked, setTracked] = useState<GuestTrackedPlayer[]>([]);
   const [activeTrackedId, setActiveTrackedId] = useState<string | null>(null);
   const [noteDraft, setNoteDraft] = useState('');
   const [tagDraft, setTagDraft] = useState('');
   const [selectionRequired, setSelectionRequired] = useState(false);
   const [dashboardMode, setDashboardMode] = useState<DashboardMode>('server');
-  const [alertSettings, setAlertSettings] = useState<AlertSettings>({
-    trackedOnline: true,
-    trackedOffline: true,
-    queue: false,
-    wipe: true,
-    notes: false,
-  });
-  const [uiSettings, setUiSettings] = useState<UiSettings>({
-    compactPlayers: true,
-    mapLabels: true,
-    autoOpenTracked: false,
-  });
+  const [alertSettings, setAlertSettings] =
+    useState<DashboardAlertSettings>(defaultAlertSettings);
+  const [uiSettings, setUiSettings] = useState<DashboardUiSettings>(defaultUiSettings);
 
   const selectedServer =
     selectionRequired
@@ -168,6 +162,54 @@ export default function DashboardApp({ locale, dictionary, initialQuery = '' }: 
       active = false;
     };
   }, [initialQuery]);
+
+  useEffect(() => {
+    if (!supabase) return;
+    let active = true;
+
+    supabase.auth.getSession().then(({ data }) => {
+      if (!active) return;
+      setUserId(data.session?.user.id ?? null);
+    });
+
+    const {
+      data: { subscription },
+    } = supabase.auth.onAuthStateChange((_event, session) => {
+      setUserId(session?.user.id ?? null);
+    });
+
+    return () => {
+      active = false;
+      subscription.unsubscribe();
+    };
+  }, [supabase]);
+
+  useEffect(() => {
+    if (!supabase || !userId) return;
+    let active = true;
+
+    loadDashboardState(supabase, userId)
+      .then((state) => {
+        if (!active) return;
+        setFavoriteServerIds(state.favoriteServerIds);
+        setTracked(state.tracked);
+        setVoiceEnabled(state.voiceEnabled);
+        setAlertSettings(state.alertSettings);
+        setUiSettings(state.uiSettings);
+      })
+      .catch((error) => {
+        if (!active) return;
+        setErrorMessage(
+          error instanceof Error
+            ? `Supabase no ha cargado tu perfil: ${error.message}`
+            : 'Supabase no ha cargado tu perfil.',
+        );
+      });
+
+    return () => {
+      active = false;
+    };
+  }, [supabase, userId]);
 
   async function submitSearch() {
     const cleanQuery = query.trim();
@@ -253,14 +295,58 @@ export default function DashboardApp({ locale, dictionary, initialQuery = '' }: 
     if (nextValue) {
       speakNow(locale === 'es' ? 'Alertas de voz activadas.' : 'Voice alerts enabled.');
     }
+    persistSettings(nextValue, alertSettings, uiSettings);
   }
 
-  function toggleAlertSetting(key: keyof AlertSettings) {
-    setAlertSettings((current) => ({ ...current, [key]: !current[key] }));
+  function toggleAlertSetting(key: keyof DashboardAlertSettings) {
+    setAlertSettings((current) => {
+      const nextSettings = { ...current, [key]: !current[key] };
+      persistSettings(voiceEnabled, nextSettings, uiSettings);
+      return nextSettings;
+    });
   }
 
-  function toggleUiSetting(key: keyof UiSettings) {
-    setUiSettings((current) => ({ ...current, [key]: !current[key] }));
+  function toggleUiSetting(key: keyof DashboardUiSettings) {
+    setUiSettings((current) => {
+      const nextSettings = { ...current, [key]: !current[key] };
+      persistSettings(voiceEnabled, alertSettings, nextSettings);
+      return nextSettings;
+    });
+  }
+
+  function persistSettings(
+    nextVoiceEnabled: boolean,
+    nextAlertSettings: DashboardAlertSettings,
+    nextUiSettings: DashboardUiSettings,
+  ) {
+    if (!supabase || !userId) return;
+
+    saveDashboardSettings(
+      supabase,
+      userId,
+      nextVoiceEnabled,
+      nextAlertSettings,
+      nextUiSettings,
+    ).catch(handlePersistenceError);
+  }
+
+  async function ensureTrackedDbId(player: GuestTrackedPlayer) {
+    if (player.dbId) return player.dbId;
+    if (!supabase || !userId) return null;
+
+    const dbId = await saveTrackedPlayer(supabase, userId, player);
+    setTracked((current) =>
+      current.map((item) => (item.id === player.id ? { ...item, dbId } : item)),
+    );
+    return dbId;
+  }
+
+  function handlePersistenceError(error: unknown) {
+    setErrorMessage(
+      error instanceof Error
+        ? `No se ha podido guardar en Supabase: ${error.message}`
+        : 'No se ha podido guardar en Supabase.',
+    );
   }
 
   function trackPlayer(player: ConnectedPlayer) {
@@ -282,6 +368,15 @@ export default function DashboardApp({ locale, dictionary, initialQuery = '' }: 
     };
 
     setTracked((current) => [nextTracked, ...current]);
+    if (supabase && userId) {
+      saveTrackedPlayer(supabase, userId, nextTracked)
+        .then((dbId) => {
+          setTracked((current) =>
+            current.map((item) => (item.id === nextTracked.id ? { ...item, dbId } : item)),
+          );
+        })
+        .catch(handlePersistenceError);
+    }
     if (uiSettings.autoOpenTracked) setActiveTrackedId(nextTracked.id);
     if (alertSettings.trackedOnline) {
       speak(locale === 'es' ? `${player.name} se ha conectado.` : `${player.name} is online.`);
@@ -289,9 +384,13 @@ export default function DashboardApp({ locale, dictionary, initialQuery = '' }: 
   }
 
   function toggleFavorite(serverId: string) {
-    setFavoriteServerIds((current) =>
-      current.includes(serverId) ? current.filter((id) => id !== serverId) : [serverId, ...current],
-    );
+    setFavoriteServerIds((current) => {
+      const favorite = !current.includes(serverId);
+      if (supabase && userId) {
+        saveFavoriteServer(supabase, userId, serverId, favorite).catch(handlePersistenceError);
+      }
+      return favorite ? [serverId, ...current] : current.filter((id) => id !== serverId);
+    });
   }
 
   function addNote() {
@@ -305,6 +404,14 @@ export default function DashboardApp({ locale, dictionary, initialQuery = '' }: 
           : player,
       ),
     );
+    if (supabase && userId) {
+      ensureTrackedDbId(selectedTracked)
+        .then((dbId) => {
+          if (!dbId) return;
+          return savePlayerNote(supabase, userId, dbId, cleanNote);
+        })
+        .catch(handlePersistenceError);
+    }
     setNoteDraft('');
   }
 
@@ -319,6 +426,14 @@ export default function DashboardApp({ locale, dictionary, initialQuery = '' }: 
           : player,
       ),
     );
+    if (supabase && userId) {
+      ensureTrackedDbId(selectedTracked)
+        .then((dbId) => {
+          if (!dbId) return;
+          return savePlayerTag(supabase, userId, dbId, cleanTag);
+        })
+        .catch(handlePersistenceError);
+    }
     setTagDraft('');
   }
 
@@ -332,6 +447,14 @@ export default function DashboardApp({ locale, dictionary, initialQuery = '' }: 
           : player,
       ),
     );
+    if (supabase && userId) {
+      ensureTrackedDbId(selectedTracked)
+        .then((dbId) => {
+          if (!dbId) return;
+          return removePlayerTag(supabase, userId, dbId, tag);
+        })
+        .catch(handlePersistenceError);
+    }
   }
 
   return (
@@ -366,7 +489,9 @@ export default function DashboardApp({ locale, dictionary, initialQuery = '' }: 
 
       <section className="dashboard-hero">
         <div>
-          <p className="home-eyebrow">{dictionary.states.savedInMemory}</p>
+          <p className="home-eyebrow">
+            {userId ? dictionary.states.savedInCloud : dictionary.states.savedInMemory}
+          </p>
           <h1>{selectedServer?.name ?? emptyTitle}</h1>
           <p>{selectedServer?.description ?? dictionary.dashboard.noExactServer}</p>
           {selectedServer ? (
@@ -1040,11 +1165,11 @@ function SettingsPanel({
 }: {
   dictionary: Dictionary;
   voiceEnabled: boolean;
-  alertSettings: AlertSettings;
-  uiSettings: UiSettings;
+  alertSettings: DashboardAlertSettings;
+  uiSettings: DashboardUiSettings;
   onVoiceToggle: () => void;
-  onAlertToggle: (key: keyof AlertSettings) => void;
-  onUiToggle: (key: keyof UiSettings) => void;
+  onAlertToggle: (key: keyof DashboardAlertSettings) => void;
+  onUiToggle: (key: keyof DashboardUiSettings) => void;
   onTestVoice: () => void;
   onBack: () => void;
 }) {

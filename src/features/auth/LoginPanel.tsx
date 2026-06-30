@@ -44,12 +44,23 @@ export default function LoginPanel({ locale, dictionary }: Props) {
       }
 
       const { error } = await supabase.auth.signUp({ email, password });
-      setStatus(error ? error.message : 'OK');
+      setStatus(
+        error
+          ? error.message
+          : locale === 'es'
+            ? 'Cuenta creada. Revisa tu email si Supabase pide confirmacion.'
+            : 'Account created. Check your email if Supabase requires confirmation.',
+      );
       return;
     }
 
     const { error } = await supabase.auth.signInWithPassword({ email, password });
-    setStatus(error ? error.message : 'OK');
+    if (error) {
+      setStatus(error.message);
+      return;
+    }
+
+    window.location.href = localizedPath(locale, '/dashboard');
   }
 
   async function signInWithGoogle() {
