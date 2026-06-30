@@ -99,6 +99,7 @@ export default function DashboardApp({ locale, dictionary, initialQuery = '' }: 
         );
   const selectedTracked = tracked.find((player) => player.id === activeTrackedId) ?? null;
   const filteredServers = useMemo(() => filterServers(query, servers), [query, servers]);
+  const trackedOnlineCount = selectedServer ? countTrackedOnline(tracked, selectedServer) : 0;
   const emptyTitle = selectionRequired
     ? dictionary.dashboard.chooseServer
     : dictionary.dashboard.noResults;
@@ -594,6 +595,7 @@ export default function DashboardApp({ locale, dictionary, initialQuery = '' }: 
           />
           <TrackedPanel
             dictionary={dictionary}
+            server={selectedServer}
             tracked={tracked}
             activeTrackedId={activeTrackedId}
             selectedTracked={selectedTracked}
@@ -626,6 +628,7 @@ export default function DashboardApp({ locale, dictionary, initialQuery = '' }: 
 
           <div className="dashboard-tactical-stats">
             <Stat icon={Users} label={dictionary.dashboard.trackedPlayers} value={`${tracked.length}`} />
+            <Stat icon={Check} label={dictionary.dashboard.onlineTracked} value={`${trackedOnlineCount}`} />
             <Stat
               icon={MessageSquare}
               label={dictionary.dashboard.notes}
@@ -636,12 +639,12 @@ export default function DashboardApp({ locale, dictionary, initialQuery = '' }: 
               label={dictionary.dashboard.visiblePlayersShort}
               value={`${selectedServer.connectedPlayers.length}`}
             />
-            <Stat icon={Shield} label={dictionary.dashboard.proLocked} value="Pro" />
           </div>
 
           <div className="dashboard-tactical-grid">
             <TrackedPanel
               dictionary={dictionary}
+              server={selectedServer}
               tracked={tracked}
               activeTrackedId={activeTrackedId}
               selectedTracked={selectedTracked}
@@ -1021,6 +1024,7 @@ function ServerSuggestion({
 
 function TrackedPanel({
   dictionary,
+  server,
   tracked,
   activeTrackedId,
   selectedTracked,
@@ -1034,6 +1038,7 @@ function TrackedPanel({
   onRemoveTag,
 }: {
   dictionary: Dictionary;
+  server: ServerSummary;
   tracked: GuestTrackedPlayer[];
   activeTrackedId: string | null;
   selectedTracked: GuestTrackedPlayer | null;
@@ -1046,12 +1051,20 @@ function TrackedPanel({
   onAddTag: (tag: string) => void;
   onRemoveTag: (tag: string) => void;
 }) {
+  const onlineCount = countTrackedOnline(tracked, server);
+  const selectedTrackedOnline = selectedTracked
+    ? isTrackedOnline(selectedTracked, server)
+    : false;
+
   return (
-    <section className="dashboard-panel">
+    <section className="dashboard-panel dashboard-tracked-panel">
       <div className="dashboard-panel-heading">
         <div>
           <span>{dictionary.dashboard.trackedPlayers}</span>
-          <h2>{tracked.length}</h2>
+          <h2>
+            {onlineCount}/{tracked.length} {dictionary.dashboard.onlineTrackedShort}
+          </h2>
+          <small>{dictionary.dashboard.tacticalHint}</small>
         </div>
       </div>
 
@@ -1059,6 +1072,7 @@ function TrackedPanel({
         <div className="dashboard-tracked-grid">
           {tracked.map((player) => {
             const selected = player.id === activeTrackedId;
+            const online = isTrackedOnline(player, server);
             return (
               <button
                 key={player.id}
@@ -1066,17 +1080,22 @@ function TrackedPanel({
                 type="button"
                 onClick={() => onSelect(selected ? null : player.id)}
               >
-                <span className="dashboard-player-avatar">{playerInitials(player.name)}</span>
+                <span className="dashboard-player-avatar-wrap">
+                  <span className="dashboard-player-avatar">{playerInitials(player.name)}</span>
+                  <span
+                    className={online ? 'dashboard-status-light online' : 'dashboard-status-light offline'}
+                    aria-label={online ? dictionary.states.connected : dictionary.states.disconnected}
+                  />
+                </span>
                 <span>
                   <strong>{player.name}</strong>
                   <small>
                     {player.tags.slice(0, 2).join(' / ') || dictionary.dashboard.noTags}
                   </small>
                 </span>
-                <i>
-                  <MessageSquare size={13} aria-hidden />
-                  {player.notes.length}
-                </i>
+                <span className={online ? 'dashboard-status-pill online' : 'dashboard-status-pill offline'}>
+                  {online ? dictionary.dashboard.onlineStatus : dictionary.dashboard.offlineStatus}
+                </span>
               </button>
             );
           })}
@@ -1088,23 +1107,57 @@ function TrackedPanel({
       {selectedTracked ? (
         <div className="dashboard-tracked-editor">
           <div className="dashboard-tracked-profile">
-            <span className="dashboard-player-avatar large">{playerInitials(selectedTracked.name)}</span>
+            <span className="dashboard-player-avatar-wrap large">
+              <span className="dashboard-player-avatar large">{playerInitials(selectedTracked.name)}</span>
+              <span
+                className={
+                  selectedTrackedOnline
+                    ? 'dashboard-status-light online'
+                    : 'dashboard-status-light offline'
+                }
+              />
+            </span>
             <div>
               <strong>{selectedTracked.name}</strong>
               <span>{selectedTracked.serverName}</span>
             </div>
+            <span
+              className={
+                selectedTrackedOnline
+                  ? 'dashboard-status-pill online'
+                  : 'dashboard-status-pill offline'
+              }
+            >
+              {selectedTrackedOnline ? dictionary.dashboard.onlineStatus : dictionary.dashboard.offlineStatus}
+            </span>
             <button type="button" onClick={() => onSelect(null)} aria-label={dictionary.actions.close}>
               <X size={15} aria-hidden />
             </button>
           </div>
 
+          <div className="dashboard-player-intel">
+            <span>
+              <MessageSquare size={14} aria-hidden />
+              {selectedTracked.notes.length} {dictionary.dashboard.notes.toLowerCase()}
+            </span>
+            <span>
+              <Tag size={14} aria-hidden />
+              {selectedTracked.tags.length} {dictionary.dashboard.tags.toLowerCase()}
+            </span>
+          </div>
+
+          <div className="dashboard-section-label">{dictionary.dashboard.tags}</div>
           <div className="dashboard-tag-list">
-            {selectedTracked.tags.map((tag) => (
-              <button key={tag} type="button" onClick={() => onRemoveTag(tag)}>
-                {tag}
-                <X size={12} aria-hidden />
-              </button>
-            ))}
+            {selectedTracked.tags.length ? (
+              selectedTracked.tags.map((tag) => (
+                <button key={tag} type="button" onClick={() => onRemoveTag(tag)}>
+                  {tag}
+                  <X size={12} aria-hidden />
+                </button>
+              ))
+            ) : (
+              <span>{dictionary.dashboard.noTags}</span>
+            )}
           </div>
 
           <div className="dashboard-inline-input">
@@ -1119,6 +1172,7 @@ function TrackedPanel({
             </button>
           </div>
 
+          <div className="dashboard-section-label">{dictionary.dashboard.quickTags}</div>
           <div className="dashboard-chips muted">
             {defaultTags.map((tag) => (
               <button key={tag} type="button" onClick={() => onAddTag(tag)}>
@@ -1136,11 +1190,16 @@ function TrackedPanel({
             {dictionary.actions.addNote}
           </button>
 
-          {selectedTracked.notes.map((note) => (
-            <p className="dashboard-note" key={note}>
-              {note}
-            </p>
-          ))}
+          {selectedTracked.notes.length ? (
+            <div className="dashboard-note-list">
+              <div className="dashboard-section-label">{dictionary.dashboard.notesHistory}</div>
+              {selectedTracked.notes.map((note) => (
+                <p className="dashboard-note" key={note}>
+                  {note}
+                </p>
+              ))}
+            </div>
+          ) : null}
         </div>
       ) : tracked.length ? (
         <div className="dashboard-track-hint">
@@ -1333,7 +1392,7 @@ function ActivityFeed({
       id: `tracked-${player.id}`,
       time: 'Ahora',
       playerName: player.name,
-      type: 'connected' as const,
+      type: isTrackedOnline(player, server) ? ('connected' as const) : ('disconnected' as const),
     }));
   const events = [...trackedEvents, ...server.activity].slice(0, 6);
 
@@ -1422,6 +1481,17 @@ function filterServers(query: string, source: ServerSummary[]) {
   );
 
   return results.length ? results : source;
+}
+
+function isTrackedOnline(player: GuestTrackedPlayer, server: ServerSummary) {
+  return (
+    player.serverId === server.id &&
+    server.connectedPlayers.some((connectedPlayer) => connectedPlayer.id === player.id)
+  );
+}
+
+function countTrackedOnline(players: GuestTrackedPlayer[], server: ServerSummary) {
+  return players.filter((player) => isTrackedOnline(player, server)).length;
 }
 
 function isIpOnlyQuery(value: string) {
