@@ -1,0 +1,88 @@
+---
+import { LogIn, Radar, SearchCheck, Sparkles } from 'lucide-react';
+import HomeSearch from '@/features/home/HomeSearch';
+import ServerBrowser from '@/features/home/ServerBrowser';
+import HomePointerGlow from '@/features/home/HomePointerGlow';
+import AppLayout from '@/layouts/AppLayout.astro';
+import { getDictionary, locales } from '@/lib/i18n/dictionaries';
+import { getLocaleFromParams, localizedPath } from '@/lib/i18n/routing';
+
+export const prerender = true;
+
+export function getStaticPaths() {
+  return locales.map((lang) => ({ params: { lang } }));
+}
+
+const locale = getLocaleFromParams(Astro.params.lang);
+const dictionary = getDictionary(locale);
+---
+
+<AppLayout
+  locale={locale}
+  dictionary={dictionary}
+  title={dictionary.app.name}
+  description={dictionary.home.description}
+>
+  <main class="home-stage min-h-screen overflow-hidden px-5">
+    <HomePointerGlow client:load />
+    <div class="home-pointer-glow"></div>
+    <div class="home-aurora home-aurora-a"></div>
+    <div class="home-aurora home-aurora-b"></div>
+    <div class="home-grid"></div>
+
+    <header class="relative z-10 mx-auto flex w-full max-w-7xl items-center justify-between py-4">
+      <a href={localizedPath(locale, '/')} class="flex items-center gap-3">
+        <span class="home-nav-logo">
+          <img src="/images/rustrack-logo-cropped.png" alt="Rustrack" />
+        </span>
+      </a>
+      <nav class="flex items-center gap-3">
+        <a
+          class="home-login-button"
+          href={localizedPath(locale, '/auth/login')}
+          aria-label={dictionary.actions.signIn}
+          title={dictionary.actions.signIn}
+        >
+          <LogIn size={20} aria-hidden />
+        </a>
+      </nav>
+    </header>
+
+    <section
+      class="relative z-10 mx-auto flex min-h-[calc(100vh-82px)] w-full max-w-7xl flex-col items-center justify-center pb-8 text-center"
+    >
+      <p class="home-eyebrow">{dictionary.home.eyebrow}</p>
+      <h1 class="home-title">
+        <span>{dictionary.home.titlePrimary}</span>
+        <span class="home-title-secondary">{dictionary.home.titleSecondary}</span>
+      </h1>
+      <p class="home-description">{dictionary.home.description}</p>
+
+      <div class="mt-6 w-full">
+        <HomeSearch client:load locale={locale} dictionary={dictionary} />
+      </div>
+
+      <div class="mt-5 grid w-full max-w-4xl gap-3 md:grid-cols-3">
+        <div class="home-proof">
+          <span class="home-proof-icon"><Sparkles size={18} aria-hidden /></span>
+          <strong>{dictionary.home.live}</strong>
+          <span>{dictionary.home.liveDescription}</span>
+        </div>
+        <div class="home-proof">
+          <span class="home-proof-icon"><SearchCheck size={18} aria-hidden /></span>
+          <strong>{dictionary.home.simple}</strong>
+          <span>{dictionary.home.simpleDescription}</span>
+        </div>
+        <div class="home-proof">
+          <span class="home-proof-icon"><Radar size={18} aria-hidden /></span>
+          <strong>{dictionary.home.collaborative}</strong>
+          <span>{dictionary.home.collaborativeDescription}</span>
+        </div>
+      </div>
+
+      <p class="mt-5 text-sm text-white/42">{dictionary.home.footer}</p>
+    </section>
+
+    <ServerBrowser client:load locale={locale} dictionary={dictionary} />
+  </main>
+</AppLayout>

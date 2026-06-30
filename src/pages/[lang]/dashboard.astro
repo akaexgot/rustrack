@@ -1,0 +1,27 @@
+---
+import DashboardApp from '@/features/dashboard/DashboardApp';
+import HomePointerGlow from '@/features/home/HomePointerGlow';
+import AppLayout from '@/layouts/AppLayout.astro';
+import { getDictionary } from '@/lib/i18n/dictionaries';
+import { getLocaleFromParams } from '@/lib/i18n/routing';
+
+const locale = getLocaleFromParams(Astro.params.lang);
+const dictionary = getDictionary(locale);
+const initialQuery = Astro.url.searchParams.get('q') ?? '';
+---
+
+<AppLayout
+  locale={locale}
+  dictionary={dictionary}
+  title={dictionary.dashboard.title}
+  description={dictionary.dashboard.description}
+>
+  <main class="home-stage min-h-screen overflow-hidden px-5">
+    <HomePointerGlow client:load />
+    <div class="home-pointer-glow"></div>
+    <div class="home-aurora home-aurora-a"></div>
+    <div class="home-aurora home-aurora-b"></div>
+    <div class="home-grid"></div>
+    <DashboardApp client:load locale={locale} dictionary={dictionary} initialQuery={initialQuery} />
+  </main>
+</AppLayout>

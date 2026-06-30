@@ -1,0 +1,39 @@
+---
+import '@/styles/global.css';
+import { getAlternateLocale, type Dictionary, type Locale } from '@/lib/i18n/dictionaries';
+
+type Props = {
+  locale: Locale;
+  dictionary: Dictionary;
+  title?: string;
+  description?: string;
+};
+
+const { locale, dictionary, title, description } = Astro.props;
+const alternateLocale = getAlternateLocale(locale);
+const alternatePath = Astro.url.pathname.replace(`/${locale}`, `/${alternateLocale}`);
+const pageTitle = title ? `${title} | Rustrack` : 'Rustrack';
+---
+
+<!doctype html>
+<html lang={locale}>
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="description" content={description ?? dictionary.app.subtitle} />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta name="theme-color" content="#15110d" />
+    <link rel="icon" type="image/svg+xml" href="/icons/icon.svg" />
+    <link rel="manifest" href="/manifest.webmanifest" />
+    <title>{pageTitle}</title>
+  </head>
+  <body>
+    <slot />
+    <a
+      class="fixed bottom-4 right-4 rounded-md border px-3 py-2 text-sm shadow-sm transition hover:-translate-y-0.5"
+      style="background: var(--rt-panel); border-color: var(--rt-line); color: var(--rt-ink);"
+      href={alternatePath}
+    >
+      {dictionary.actions.switchLanguage}
+    </a>
+  </body>
+</html>

@@ -1,0 +1,17 @@
+{
+  "name": "Rustrack",
+  "short_name": "Rustrack",
+  "description": "Rust server intelligence and collaborative wipe planning.",
+  "start_url": "/es/dashboard",
+  "display": "standalone",
+  "background_color": "#f7f2ea",
+  "theme_color": "#15110d",
+  "icons": [
+    {
+      "src": "/icons/icon.svg",
+      "sizes": "any",
+      "type": "image/svg+xml",
+      "purpose": "any maskable"
+    }
+  ]
+}

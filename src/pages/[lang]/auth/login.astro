@@ -1,0 +1,28 @@
+---
+import LoginPanel from '@/features/auth/LoginPanel';
+import HomePointerGlow from '@/features/home/HomePointerGlow';
+import AppLayout from '@/layouts/AppLayout.astro';
+import { getDictionary } from '@/lib/i18n/dictionaries';
+import { locales } from '@/lib/i18n/dictionaries';
+import { getLocaleFromParams } from '@/lib/i18n/routing';
+
+export const prerender = true;
+
+export function getStaticPaths() {
+  return locales.map((lang) => ({ params: { lang } }));
+}
+
+const locale = getLocaleFromParams(Astro.params.lang);
+const dictionary = getDictionary(locale);
+---
+
+<AppLayout locale={locale} dictionary={dictionary} title={dictionary.auth.title}>
+  <main class="home-stage min-h-screen overflow-hidden px-5">
+    <HomePointerGlow client:load />
+    <div class="home-pointer-glow"></div>
+    <div class="home-aurora home-aurora-a"></div>
+    <div class="home-aurora home-aurora-b"></div>
+    <div class="home-grid"></div>
+    <LoginPanel client:load locale={locale} dictionary={dictionary} />
+  </main>
+</AppLayout>
