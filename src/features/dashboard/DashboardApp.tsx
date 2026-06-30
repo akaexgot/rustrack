@@ -21,7 +21,7 @@ import {
   X,
   type LucideIcon,
 } from 'lucide-react';
-import { useEffect, useMemo, useState } from 'react';
+import { useEffect, useMemo, useState, type CSSProperties } from 'react';
 
 import {
   getPopularRustServers,
@@ -59,6 +59,7 @@ type GuestTrackedPlayer = {
   name: string;
   serverId: string;
   serverName: string;
+  group?: string;
   tags: string[];
   notes: string[];
 };
@@ -66,6 +67,7 @@ type GuestTrackedPlayer = {
 type DashboardMode = 'server' | 'tactical' | 'settings';
 
 const defaultTags = ['Muy activo', 'Posible aliado', 'Clan enemigo', 'Vive cerca', 'Tiene AK'];
+const defaultGroups = ['Team rojo', 'Team azul', 'Vecinos', 'Raid Targets', 'Aliados'];
 export default function DashboardApp({ locale, dictionary, initialQuery = '' }: Props) {
   const supabase = useMemo(() => createBrowserSupabaseClient(), []);
   const initialServer = useMemo(() => findBestServer(initialQuery), [initialQuery]);
@@ -82,6 +84,7 @@ export default function DashboardApp({ locale, dictionary, initialQuery = '' }: 
   const [activeTrackedId, setActiveTrackedId] = useState<string | null>(null);
   const [noteDraft, setNoteDraft] = useState('');
   const [tagDraft, setTagDraft] = useState('');
+  const [groupDraft, setGroupDraft] = useState('');
   const [selectionRequired, setSelectionRequired] = useState(false);
   const [dashboardMode, setDashboardMode] = useState<DashboardMode>('server');
   const [alertSettings, setAlertSettings] =
@@ -458,6 +461,28 @@ export default function DashboardApp({ locale, dictionary, initialQuery = '' }: 
     }
   }
 
+  function assignGroup(group: string) {
+    const cleanGroup = group.trim();
+    if (!selectedTracked || !cleanGroup) return;
+
+    setTracked((current) =>
+      current.map((player) =>
+        player.id === selectedTracked.id ? { ...player, group: cleanGroup } : player,
+      ),
+    );
+    setGroupDraft('');
+  }
+
+  function clearGroup() {
+    if (!selectedTracked) return;
+
+    setTracked((current) =>
+      current.map((player) =>
+        player.id === selectedTracked.id ? { ...player, group: undefined } : player,
+      ),
+    );
+  }
+
   return (
     <div className="dashboard-shell">
       <header className="dashboard-topbar">
@@ -601,12 +626,16 @@ export default function DashboardApp({ locale, dictionary, initialQuery = '' }: 
             selectedTracked={selectedTracked}
             noteDraft={noteDraft}
             tagDraft={tagDraft}
+            groupDraft={groupDraft}
             onSelect={setActiveTrackedId}
             onNoteDraft={setNoteDraft}
             onTagDraft={setTagDraft}
+            onGroupDraft={setGroupDraft}
             onAddNote={addNote}
             onAddTag={addTag}
             onRemoveTag={removeTag}
+            onAssignGroup={assignGroup}
+            onClearGroup={clearGroup}
           />
           <ActivityFeed dictionary={dictionary} server={selectedServer} tracked={tracked} />
         </aside>
@@ -650,12 +679,16 @@ export default function DashboardApp({ locale, dictionary, initialQuery = '' }: 
               selectedTracked={selectedTracked}
               noteDraft={noteDraft}
               tagDraft={tagDraft}
+              groupDraft={groupDraft}
               onSelect={setActiveTrackedId}
               onNoteDraft={setNoteDraft}
               onTagDraft={setTagDraft}
+              onGroupDraft={setGroupDraft}
               onAddNote={addNote}
               onAddTag={addTag}
               onRemoveTag={removeTag}
+              onAssignGroup={assignGroup}
+              onClearGroup={clearGroup}
             />
             <OnlinePlayers
               dictionary={dictionary}
@@ -1030,12 +1063,16 @@ function TrackedPanel({
   selectedTracked,
   noteDraft,
   tagDraft,
+  groupDraft,
   onSelect,
   onNoteDraft,
   onTagDraft,
+  onGroupDraft,
   onAddNote,
   onAddTag,
   onRemoveTag,
+  onAssignGroup,
+  onClearGroup,
 }: {
   dictionary: Dictionary;
   server: ServerSummary;
@@ -1044,12 +1081,16 @@ function TrackedPanel({
   selectedTracked: GuestTrackedPlayer | null;
   noteDraft: string;
   tagDraft: string;
+  groupDraft: string;
   onSelect: (id: string | null) => void;
   onNoteDraft: (value: string) => void;
   onTagDraft: (value: string) => void;
+  onGroupDraft: (value: string) => void;
   onAddNote: () => void;
   onAddTag: (tag: string) => void;
   onRemoveTag: (tag: string) => void;
+  onAssignGroup: (group: string) => void;
+  onClearGroup: () => void;
 }) {
   const onlineCount = countTrackedOnline(tracked, server);
   const selectedTrackedOnline = selectedTracked
@@ -1073,10 +1114,12 @@ function TrackedPanel({
           {tracked.map((player) => {
             const selected = player.id === activeTrackedId;
             const online = isTrackedOnline(player, server);
+            const groupColor = player.group ? groupColorFor(player.group) : undefined;
             return (
               <button
                 key={player.id}
                 className={selected ? 'dashboard-tracked-card selected' : 'dashboard-tracked-card'}
+                style={{ '--team-color': groupColor } as CSSProperties}
                 type="button"
                 onClick={() => onSelect(selected ? null : player.id)}
               >
@@ -1090,7 +1133,9 @@ function TrackedPanel({
                 <span>
                   <strong>{player.name}</strong>
                   <small>
-                    {player.tags.slice(0, 2).join(' / ') || dictionary.dashboard.noTags}
+                    {player.group
+                      ? player.group
+                      : player.tags.slice(0, 2).join(' / ') || dictionary.dashboard.noTags}
                   </small>
                 </span>
                 <span className={online ? 'dashboard-status-pill online' : 'dashboard-status-pill offline'}>
@@ -1144,6 +1189,41 @@ function TrackedPanel({
               <Tag size={14} aria-hidden />
               {selectedTracked.tags.length} {dictionary.dashboard.tags.toLowerCase()}
             </span>
+            <span className="dashboard-intel-group">
+              <Users size={14} aria-hidden />
+              {selectedTracked.group ?? dictionary.dashboard.noGroup}
+            </span>
+          </div>
+
+          <div className="dashboard-section-label">{dictionary.dashboard.group}</div>
+          <div className="dashboard-group-editor">
+            <div className="dashboard-inline-input">
+              <Users size={16} aria-hidden />
+              <input
+                value={groupDraft}
+                onChange={(event) => onGroupDraft(event.target.value)}
+                placeholder={dictionary.dashboard.groupPlaceholder}
+              />
+              <button type="button" onClick={() => onAssignGroup(groupDraft)}>
+                <Plus size={15} aria-hidden />
+              </button>
+            </div>
+            {selectedTracked.group ? (
+              <button className="dashboard-group-chip active" type="button" onClick={onClearGroup}>
+                <span style={{ background: groupColorFor(selectedTracked.group) }} />
+                {selectedTracked.group}
+                <X size={12} aria-hidden />
+              </button>
+            ) : null}
+          </div>
+
+          <div className="dashboard-group-list">
+            {defaultGroups.map((group) => (
+              <button key={group} type="button" onClick={() => onAssignGroup(group)}>
+                <span style={{ background: groupColorFor(group) }} />
+                {group}
+              </button>
+            ))}
           </div>
 
           <div className="dashboard-section-label">{dictionary.dashboard.tags}</div>
@@ -1525,4 +1605,12 @@ function playerInitials(name: string) {
   const chunks = cleanName.split(/[\s_-]+/).filter(Boolean);
   if (chunks.length > 1) return `${chunks[0][0]}${chunks[1][0]}`.toUpperCase();
   return cleanName.slice(0, 2).toUpperCase();
+}
+
+function groupColorFor(group: string) {
+  const colors = ['#ff4b22', '#38bdf8', '#32d583', '#f59e0b', '#a78bfa', '#f43f5e'];
+  const index = group
+    .split('')
+    .reduce((total, char) => total + char.charCodeAt(0), 0) % colors.length;
+  return colors[index];
 }

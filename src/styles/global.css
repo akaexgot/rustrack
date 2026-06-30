@@ -1017,6 +1017,7 @@ a {
 }
 
 .dashboard-tracked-card {
+  position: relative;
   display: grid;
   grid-template-columns: auto minmax(0, 1fr) auto;
   align-items: center;
@@ -1032,6 +1033,16 @@ a {
     transform 180ms ease,
     border-color 180ms ease,
     background 180ms ease;
+}
+
+.dashboard-tracked-card::before {
+  content: '';
+  position: absolute;
+  inset: 0 auto 0 0;
+  width: 3px;
+  border-radius: 0.75rem 0 0 0.75rem;
+  background: var(--team-color, transparent);
+  box-shadow: 0 0 20px color-mix(in srgb, var(--team-color, transparent) 60%, transparent);
 }
 
 .dashboard-tracked-card:hover,
@@ -1231,7 +1242,7 @@ a {
 
 .dashboard-player-intel {
   display: grid;
-  grid-template-columns: repeat(2, minmax(0, 1fr));
+  grid-template-columns: repeat(3, minmax(0, 1fr));
   gap: 0.55rem;
 }
 
@@ -1245,6 +1256,10 @@ a {
   background: rgba(255, 255, 255, 0.04);
   color: rgba(255, 255, 255, 0.66);
   font-size: 0.84rem;
+}
+
+.dashboard-intel-group {
+  color: rgba(255, 255, 255, 0.82) !important;
 }
 
 .dashboard-section-label {
@@ -1266,6 +1281,47 @@ a {
 .dashboard-note-list {
   display: grid;
   gap: 0.55rem;
+}
+
+.dashboard-group-editor {
+  display: grid;
+  gap: 0.55rem;
+}
+
+.dashboard-group-list {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.45rem;
+}
+
+.dashboard-group-list button,
+.dashboard-group-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.42rem;
+  width: fit-content;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 999px;
+  padding: 0.46rem 0.65rem;
+  background: rgba(255, 255, 255, 0.055);
+  color: rgba(255, 255, 255, 0.76);
+  font-size: 0.82rem;
+  font-weight: 720;
+}
+
+.dashboard-group-list button:hover,
+.dashboard-group-chip.active {
+  border-color: rgba(255, 255, 255, 0.18);
+  background: rgba(255, 255, 255, 0.085);
+  color: white;
+}
+
+.dashboard-group-list span,
+.dashboard-group-chip span {
+  width: 0.62rem;
+  height: 0.62rem;
+  border-radius: 999px;
+  box-shadow: 0 0 14px currentColor;
 }
 
 .dashboard-tactical-entry {
