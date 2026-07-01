@@ -213,6 +213,20 @@ export async function saveTrackedPlayerIntel(
   if (error) throw error;
 }
 
+export async function deleteTrackedPlayer(
+  supabase: SupabaseClient,
+  userId: string,
+  trackedPlayerId: string,
+) {
+  const { error } = await supabase
+    .from('tracked_players')
+    .delete()
+    .eq('id', trackedPlayerId)
+    .eq('user_id', userId);
+
+  if (error) throw error;
+}
+
 export async function savePlayerNote(
   supabase: SupabaseClient,
   userId: string,

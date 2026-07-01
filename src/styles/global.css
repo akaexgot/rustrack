@@ -1144,6 +1144,41 @@ a {
   z-index: 1;
 }
 
+.dashboard-untrack-button {
+  position: absolute;
+  z-index: 4;
+  top: 0.55rem;
+  right: 0.55rem;
+  display: grid;
+  width: 1.8rem;
+  height: 1.8rem;
+  place-items: center;
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  border-radius: 0.55rem;
+  background: rgba(10, 10, 10, 0.72);
+  color: rgba(255, 255, 255, 0.78);
+  opacity: 0;
+  transform: translateY(-4px);
+  transition:
+    opacity 160ms ease,
+    transform 160ms ease,
+    border-color 160ms ease,
+    color 160ms ease;
+}
+
+.dashboard-tracked-card:hover .dashboard-untrack-button,
+.dashboard-tracked-card:focus-visible .dashboard-untrack-button,
+.dashboard-untrack-button:focus-visible {
+  opacity: 1;
+  transform: translateY(0);
+}
+
+.dashboard-untrack-button:hover,
+.dashboard-untrack-button:focus-visible {
+  border-color: rgba(240, 68, 56, 0.42);
+  color: #fda29b;
+}
+
 .dashboard-tracked-card:hover,
 .dashboard-tracked-card.selected {
   transform: translateY(-1px);

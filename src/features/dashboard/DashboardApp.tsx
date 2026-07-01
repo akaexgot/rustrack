@@ -33,6 +33,7 @@ import type { ConnectedPlayer, ServerSummary } from '@/lib/battlemetrics/types';
 import {
   defaultAlertSettings,
   defaultUiSettings,
+  deleteTrackedPlayer,
   loadDashboardState,
   removePlayerTag,
   saveDashboardSettings,
@@ -70,6 +71,7 @@ type DashboardMode = 'server' | 'tactical' | 'settings';
 
 const defaultTags = ['Muy activo', 'Posible aliado', 'Clan enemigo', 'Vive cerca', 'Tiene AK'];
 const defaultGroups = ['General', 'Team rojo', 'Team azul', 'Vecinos', 'Raid Targets', 'Aliados'];
+const freeTrackedPlayerLimit = 10;
 export default function DashboardApp({ locale, dictionary, initialQuery = '' }: Props) {
   const supabase = useMemo(() => createBrowserSupabaseClient(), []);
   const initialServer = useMemo(() => findBestServer(initialQuery), [initialQuery]);
@@ -500,6 +502,11 @@ export default function DashboardApp({ locale, dictionary, initialQuery = '' }: 
       return;
     }
 
+    if (tracked.length >= freeTrackedPlayerLimit) {
+      setErrorMessage(dictionary.dashboard.freeTrackedLimit);
+      return;
+    }
+
     const nextTracked: GuestTrackedPlayer = {
       id: player.id,
       name: player.name,
@@ -524,6 +531,24 @@ export default function DashboardApp({ locale, dictionary, initialQuery = '' }: 
     if (uiSettings.autoOpenTracked) setActiveTrackedId(nextTracked.id);
     if (alertSettings.trackedOnline) {
       speak(locale === 'es' ? `${player.name} se ha conectado.` : `${player.name} is online.`);
+    }
+  }
+
+  function untrackPlayer(player: GuestTrackedPlayer) {
+    setTracked((current) => current.filter((item) => item.id !== player.id));
+    if (activeTrackedId === player.id) setActiveTrackedId(null);
+
+    if (supabase && userId) {
+      const deleteById = player.dbId
+        ? Promise.resolve(player.dbId)
+        : ensureTrackedDbId(player);
+
+      deleteById
+        .then((dbId) => {
+          if (!dbId) return;
+          return deleteTrackedPlayer(supabase, userId, dbId);
+        })
+        .catch(handlePersistenceError);
     }
   }
 
@@ -818,6 +843,7 @@ export default function DashboardApp({ locale, dictionary, initialQuery = '' }: 
             onAssignGroup={assignGroup}
             onClearGroup={clearGroup}
             onSaveBaseLocation={saveBaseLocation}
+            onUntrack={untrackPlayer}
           />
           <ActivityFeed dictionary={dictionary} server={selectedServer} tracked={tracked} />
         </aside>
@@ -875,6 +901,7 @@ export default function DashboardApp({ locale, dictionary, initialQuery = '' }: 
               onAssignGroup={assignGroup}
               onClearGroup={clearGroup}
               onSaveBaseLocation={saveBaseLocation}
+              onUntrack={untrackPlayer}
             />
             <div className="dashboard-tactical-context">
               <OnlinePlayers
@@ -1266,6 +1293,7 @@ function TrackedPanel({
   onAssignGroup,
   onClearGroup,
   onSaveBaseLocation,
+  onUntrack,
 }: {
   featured?: boolean;
   dictionary: Dictionary;
@@ -1288,6 +1316,7 @@ function TrackedPanel({
   onAssignGroup: (group: string) => void;
   onClearGroup: () => void;
   onSaveBaseLocation: () => void;
+  onUntrack: (player: GuestTrackedPlayer) => void;
 }) {
   const onlineCount = countTrackedOnline(tracked, server);
   const selectedTrackedOnline = selectedTracked
@@ -1339,6 +1368,24 @@ function TrackedPanel({
                         type="button"
                         onClick={() => onSelect(player.id)}
                       >
+                        <span
+                          className="dashboard-untrack-button"
+                          role="button"
+                          tabIndex={0}
+                          aria-label={dictionary.dashboard.untrackPlayer}
+                          onClick={(event) => {
+                            event.stopPropagation();
+                            onUntrack(player);
+                          }}
+                          onKeyDown={(event) => {
+                            if (event.key !== 'Enter' && event.key !== ' ') return;
+                            event.preventDefault();
+                            event.stopPropagation();
+                            onUntrack(player);
+                          }}
+                        >
+                          <X size={13} aria-hidden />
+                        </span>
                         <span className="dashboard-player-avatar-wrap">
                           <img
                             className="dashboard-player-character"
