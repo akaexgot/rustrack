@@ -20,6 +20,8 @@ export type PersistedTrackedPlayer = {
   name: string;
   serverId: string;
   serverName: string;
+  group?: string;
+  baseLocation?: string;
   tags: string[];
   notes: string[];
 };
@@ -29,6 +31,8 @@ type TrackedRow = {
   battlemetrics_server_id: string;
   battlemetrics_player_id: string;
   display_name: string | null;
+  group_name: string | null;
+  base_location: string | null;
 };
 
 type NoteRow = {
@@ -70,7 +74,7 @@ export async function loadDashboardState(supabase: SupabaseClient, userId: strin
       .order('created_at', { ascending: false }),
     supabase
       .from('tracked_players')
-      .select('id,battlemetrics_server_id,battlemetrics_player_id,display_name')
+      .select('id,battlemetrics_server_id,battlemetrics_player_id,display_name,group_name,base_location')
       .eq('user_id', userId)
       .order('created_at', { ascending: false }),
     supabase
@@ -135,6 +139,8 @@ export async function loadDashboardState(supabase: SupabaseClient, userId: strin
       name: row.display_name ?? row.battlemetrics_player_id,
       serverId: row.battlemetrics_server_id,
       serverName: row.battlemetrics_server_id,
+      group: row.group_name ?? 'General',
+      baseLocation: row.base_location ?? undefined,
       tags: tagsByTrackedId.get(row.id) ?? [],
       notes: notesByTrackedId.get(row.id) ?? [],
     })),
@@ -176,6 +182,8 @@ export async function saveTrackedPlayer(
         battlemetrics_server_id: player.serverId,
         battlemetrics_player_id: player.id,
         display_name: player.name,
+        group_name: player.group ?? 'General',
+        base_location: player.baseLocation ?? null,
       },
       { onConflict: 'user_id,battlemetrics_server_id,battlemetrics_player_id' },
     )
@@ -184,6 +192,25 @@ export async function saveTrackedPlayer(
 
   if (error) throw error;
   return (data as { id: string }).id;
+}
+
+export async function saveTrackedPlayerIntel(
+  supabase: SupabaseClient,
+  userId: string,
+  trackedPlayerId: string,
+  intel: { group?: string; baseLocation?: string | null },
+) {
+  const patch: { group_name?: string; base_location?: string | null } = {};
+  if (intel.group !== undefined) patch.group_name = intel.group || 'General';
+  if (intel.baseLocation !== undefined) patch.base_location = intel.baseLocation || null;
+
+  const { error } = await supabase
+    .from('tracked_players')
+    .update(patch)
+    .eq('id', trackedPlayerId)
+    .eq('user_id', userId);
+
+  if (error) throw error;
 }
 
 export async function savePlayerNote(

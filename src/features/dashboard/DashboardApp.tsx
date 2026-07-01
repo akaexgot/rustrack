@@ -7,6 +7,7 @@ import {
   Heart,
   Lock,
   LogIn,
+  MapPin,
   MessageSquare,
   Plus,
   Search,
@@ -39,6 +40,7 @@ import {
   savePlayerNote,
   savePlayerTag,
   saveTrackedPlayer,
+  saveTrackedPlayerIntel,
   type DashboardAlertSettings,
   type DashboardUiSettings,
 } from '@/lib/dashboard/persistence';
@@ -59,6 +61,7 @@ type GuestTrackedPlayer = {
   serverId: string;
   serverName: string;
   group?: string;
+  baseLocation?: string;
   tags: string[];
   notes: string[];
 };
@@ -66,7 +69,7 @@ type GuestTrackedPlayer = {
 type DashboardMode = 'server' | 'tactical' | 'settings';
 
 const defaultTags = ['Muy activo', 'Posible aliado', 'Clan enemigo', 'Vive cerca', 'Tiene AK'];
-const defaultGroups = ['Team rojo', 'Team azul', 'Vecinos', 'Raid Targets', 'Aliados'];
+const defaultGroups = ['General', 'Team rojo', 'Team azul', 'Vecinos', 'Raid Targets', 'Aliados'];
 export default function DashboardApp({ locale, dictionary, initialQuery = '' }: Props) {
   const supabase = useMemo(() => createBrowserSupabaseClient(), []);
   const initialServer = useMemo(() => findBestServer(initialQuery), [initialQuery]);
@@ -85,6 +88,7 @@ export default function DashboardApp({ locale, dictionary, initialQuery = '' }: 
   const [noteDraft, setNoteDraft] = useState('');
   const [tagDraft, setTagDraft] = useState('');
   const [groupDraft, setGroupDraft] = useState('');
+  const [baseLocationDraft, setBaseLocationDraft] = useState('');
   const [selectionRequired, setSelectionRequired] = useState(false);
   const [dashboardMode, setDashboardMode] = useState<DashboardMode>('server');
   const [alertSettings, setAlertSettings] =
@@ -214,6 +218,10 @@ export default function DashboardApp({ locale, dictionary, initialQuery = '' }: 
       active = false;
     };
   }, [supabase, userId]);
+
+  useEffect(() => {
+    setBaseLocationDraft(selectedTracked?.baseLocation ?? '');
+  }, [selectedTracked?.id, selectedTracked?.baseLocation]);
 
   useEffect(() => {
     if (!selectedServerId || selectionRequired) return;
@@ -497,7 +505,8 @@ export default function DashboardApp({ locale, dictionary, initialQuery = '' }: 
       name: player.name,
       serverId: selectedServer.id,
       serverName: selectedServer.name,
-      tags: player.tags.length ? player.tags : ['Muy activo'],
+      group: 'General',
+      tags: player.tags,
       notes: [],
     };
 
@@ -601,6 +610,14 @@ export default function DashboardApp({ locale, dictionary, initialQuery = '' }: 
         player.id === selectedTracked.id ? { ...player, group: cleanGroup } : player,
       ),
     );
+    if (supabase && userId) {
+      ensureTrackedDbId({ ...selectedTracked, group: cleanGroup })
+        .then((dbId) => {
+          if (!dbId) return;
+          return saveTrackedPlayerIntel(supabase, userId, dbId, { group: cleanGroup });
+        })
+        .catch(handlePersistenceError);
+    }
     setGroupDraft('');
   }
 
@@ -609,9 +626,40 @@ export default function DashboardApp({ locale, dictionary, initialQuery = '' }: 
 
     setTracked((current) =>
       current.map((player) =>
-        player.id === selectedTracked.id ? { ...player, group: undefined } : player,
+        player.id === selectedTracked.id ? { ...player, group: 'General' } : player,
       ),
     );
+    if (supabase && userId) {
+      ensureTrackedDbId({ ...selectedTracked, group: 'General' })
+        .then((dbId) => {
+          if (!dbId) return;
+          return saveTrackedPlayerIntel(supabase, userId, dbId, { group: 'General' });
+        })
+        .catch(handlePersistenceError);
+    }
+  }
+
+  function saveBaseLocation() {
+    if (!selectedTracked) return;
+
+    const cleanLocation = baseLocationDraft.trim();
+    const nextLocation = cleanLocation || undefined;
+
+    setTracked((current) =>
+      current.map((player) =>
+        player.id === selectedTracked.id ? { ...player, baseLocation: nextLocation } : player,
+      ),
+    );
+    if (supabase && userId) {
+      ensureTrackedDbId({ ...selectedTracked, baseLocation: nextLocation })
+        .then((dbId) => {
+          if (!dbId) return;
+          return saveTrackedPlayerIntel(supabase, userId, dbId, {
+            baseLocation: nextLocation ?? null,
+          });
+        })
+        .catch(handlePersistenceError);
+    }
   }
 
   return (
@@ -758,15 +806,18 @@ export default function DashboardApp({ locale, dictionary, initialQuery = '' }: 
             noteDraft={noteDraft}
             tagDraft={tagDraft}
             groupDraft={groupDraft}
+            baseLocationDraft={baseLocationDraft}
             onSelect={setActiveTrackedId}
             onNoteDraft={setNoteDraft}
             onTagDraft={setTagDraft}
             onGroupDraft={setGroupDraft}
+            onBaseLocationDraft={setBaseLocationDraft}
             onAddNote={addNote}
             onAddTag={addTag}
             onRemoveTag={removeTag}
             onAssignGroup={assignGroup}
             onClearGroup={clearGroup}
+            onSaveBaseLocation={saveBaseLocation}
           />
           <ActivityFeed dictionary={dictionary} server={selectedServer} tracked={tracked} />
         </aside>
@@ -812,15 +863,18 @@ export default function DashboardApp({ locale, dictionary, initialQuery = '' }: 
               noteDraft={noteDraft}
               tagDraft={tagDraft}
               groupDraft={groupDraft}
+              baseLocationDraft={baseLocationDraft}
               onSelect={setActiveTrackedId}
               onNoteDraft={setNoteDraft}
               onTagDraft={setTagDraft}
               onGroupDraft={setGroupDraft}
+              onBaseLocationDraft={setBaseLocationDraft}
               onAddNote={addNote}
               onAddTag={addTag}
               onRemoveTag={removeTag}
               onAssignGroup={assignGroup}
               onClearGroup={clearGroup}
+              onSaveBaseLocation={saveBaseLocation}
             />
             <div className="dashboard-tactical-context">
               <OnlinePlayers
@@ -1200,15 +1254,18 @@ function TrackedPanel({
   noteDraft,
   tagDraft,
   groupDraft,
+  baseLocationDraft,
   onSelect,
   onNoteDraft,
   onTagDraft,
   onGroupDraft,
+  onBaseLocationDraft,
   onAddNote,
   onAddTag,
   onRemoveTag,
   onAssignGroup,
   onClearGroup,
+  onSaveBaseLocation,
 }: {
   featured?: boolean;
   dictionary: Dictionary;
@@ -1219,15 +1276,18 @@ function TrackedPanel({
   noteDraft: string;
   tagDraft: string;
   groupDraft: string;
+  baseLocationDraft: string;
   onSelect: (id: string | null) => void;
   onNoteDraft: (value: string) => void;
   onTagDraft: (value: string) => void;
   onGroupDraft: (value: string) => void;
+  onBaseLocationDraft: (value: string) => void;
   onAddNote: () => void;
   onAddTag: (tag: string) => void;
   onRemoveTag: (tag: string) => void;
   onAssignGroup: (group: string) => void;
   onClearGroup: () => void;
+  onSaveBaseLocation: () => void;
 }) {
   const onlineCount = countTrackedOnline(tracked, server);
   const selectedTrackedOnline = selectedTracked
@@ -1235,74 +1295,73 @@ function TrackedPanel({
     : false;
 
   return (
-    <section
-      className={
-        featured
-          ? 'dashboard-panel dashboard-tracked-panel dashboard-tracked-panel-featured'
-          : 'dashboard-panel dashboard-tracked-panel'
-      }
-    >
-      <div className="dashboard-panel-heading">
-        <div>
-          <span>{dictionary.dashboard.trackedPlayers}</span>
-          <h2>
-            {onlineCount}/{tracked.length} {dictionary.dashboard.onlineTrackedShort}
-          </h2>
-          <small>{dictionary.dashboard.tacticalHint}</small>
+    <>
+      <section
+        className={
+          featured
+            ? 'dashboard-panel dashboard-tracked-panel dashboard-tracked-panel-featured'
+            : 'dashboard-panel dashboard-tracked-panel'
+        }
+      >
+        <div className="dashboard-panel-heading">
+          <div>
+            <span>{dictionary.dashboard.trackedPlayers}</span>
+            <h2>
+              {onlineCount}/{tracked.length} {dictionary.dashboard.onlineTrackedShort}
+            </h2>
+            <small>{dictionary.dashboard.tacticalHint}</small>
+          </div>
         </div>
-      </div>
 
-      {tracked.length ? (
-        <div className="dashboard-tracked-grid">
-          {tracked.map((player) => {
-            const selected = player.id === activeTrackedId;
-            const online = isTrackedOnline(player, server);
-            const groupColor = player.group ? groupColorFor(player.group) : undefined;
-            return (
-              <button
-                key={player.id}
-                className={selected ? 'dashboard-tracked-card selected' : 'dashboard-tracked-card'}
-                style={{ '--team-color': groupColor } as CSSProperties}
-                type="button"
-                onClick={() => onSelect(player.id)}
-              >
-                <span className="dashboard-player-avatar-wrap">
-                  <img
-                    className="dashboard-player-character"
-                    src="/images/character-cutout.png"
-                    alt=""
-                    loading="lazy"
-                    decoding="async"
-                  />
-                  <span className="dashboard-avatar-initials">{playerInitials(player.name)}</span>
-                  <span
-                    className={online ? 'dashboard-status-light online' : 'dashboard-status-light offline'}
-                    aria-label={online ? dictionary.states.connected : dictionary.states.disconnected}
-                  />
-                </span>
-                <span>
-                  <strong>{player.name}</strong>
-                  <small>
-                    {player.group
-                      ? player.group
-                      : player.tags.slice(0, 2).join(' / ') || dictionary.dashboard.noTags}
-                  </small>
-                </span>
-                {featured ? (
-                  <span className="dashboard-tracked-signal">
-                    {player.notes.length} {dictionary.dashboard.notes.toLowerCase()}
+        {tracked.length ? (
+          <div className="dashboard-tracked-grid">
+            {tracked.map((player) => {
+              const selected = player.id === activeTrackedId;
+              const online = isTrackedOnline(player, server);
+              const groupColor = player.group ? groupColorFor(player.group) : undefined;
+              return (
+                <button
+                  key={player.id}
+                  className={selected ? 'dashboard-tracked-card selected' : 'dashboard-tracked-card'}
+                  style={{ '--team-color': groupColor } as CSSProperties}
+                  type="button"
+                  onClick={() => onSelect(player.id)}
+                >
+                  <span className="dashboard-player-avatar-wrap">
+                    <img
+                      className="dashboard-player-character"
+                      src="/images/character-cutout.png"
+                      alt=""
+                      loading="lazy"
+                      decoding="async"
+                    />
+                    <span className="dashboard-avatar-initials">{playerInitials(player.name)}</span>
+                    <span
+                      className={online ? 'dashboard-status-light online' : 'dashboard-status-light offline'}
+                      aria-label={online ? dictionary.states.connected : dictionary.states.disconnected}
+                    />
                   </span>
-                ) : null}
-                <span className={online ? 'dashboard-status-pill online' : 'dashboard-status-pill offline'}>
-                  {online ? dictionary.dashboard.onlineStatus : dictionary.dashboard.offlineStatus}
-                </span>
-              </button>
-            );
-          })}
-        </div>
-      ) : (
-        <p className="dashboard-empty">{dictionary.dashboard.noTracked}</p>
-      )}
+                  <span>
+                    <strong>{player.name}</strong>
+                    <small>{player.group ?? dictionary.dashboard.defaultGroup}</small>
+                  </span>
+                  {featured ? (
+                    <span className="dashboard-tracked-signal">
+                      {dictionary.dashboard.livesAtShort}{' '}
+                      {player.baseLocation || dictionary.states.unavailable}
+                    </span>
+                  ) : null}
+                  <span className={online ? 'dashboard-status-pill online' : 'dashboard-status-pill offline'}>
+                    {online ? dictionary.dashboard.onlineStatus : dictionary.dashboard.offlineStatus}
+                  </span>
+                </button>
+              );
+            })}
+          </div>
+        ) : (
+          <p className="dashboard-empty">{dictionary.dashboard.noTracked}</p>
+        )}
+      </section>
 
       {selectedTracked ? (
         <div className="dashboard-modal-backdrop" role="presentation" onMouseDown={() => onSelect(null)}>
@@ -1361,8 +1420,25 @@ function TrackedPanel({
                 </span>
                 <span className="dashboard-intel-group">
                   <Users size={14} aria-hidden />
-                  {selectedTracked.group ?? dictionary.dashboard.noGroup}
+                  {selectedTracked.group ?? dictionary.dashboard.defaultGroup}
                 </span>
+                <span>
+                  <MapPin size={14} aria-hidden />
+                  {selectedTracked.baseLocation || dictionary.states.unavailable}
+                </span>
+              </div>
+
+              <div className="dashboard-section-label">{dictionary.dashboard.livesAt}</div>
+              <div className="dashboard-inline-input">
+                <MapPin size={16} aria-hidden />
+                <input
+                  value={baseLocationDraft}
+                  onChange={(event) => onBaseLocationDraft(event.target.value)}
+                  placeholder={dictionary.dashboard.baseLocationPlaceholder}
+                />
+                <button type="button" onClick={onSaveBaseLocation}>
+                  <Plus size={15} aria-hidden />
+                </button>
               </div>
 
               <div className="dashboard-section-label">{dictionary.dashboard.group}</div>
@@ -1378,7 +1454,7 @@ function TrackedPanel({
                     <Plus size={15} aria-hidden />
                   </button>
                 </div>
-                {selectedTracked.group ? (
+                {selectedTracked.group && selectedTracked.group !== dictionary.dashboard.defaultGroup ? (
                   <button className="dashboard-group-chip active" type="button" onClick={onClearGroup}>
                     <span style={{ background: groupColorFor(selectedTracked.group) }} />
                     {selectedTracked.group}
@@ -1454,7 +1530,7 @@ function TrackedPanel({
           </div>
         </div>
       ) : null}
-    </section>
+    </>
   );
 }
 
