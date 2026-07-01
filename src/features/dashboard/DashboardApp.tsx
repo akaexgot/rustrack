@@ -1268,9 +1268,14 @@ function TrackedPanel({
                 onClick={() => onSelect(selected ? null : player.id)}
               >
                 <span className="dashboard-player-avatar-wrap">
-                  <span className="dashboard-player-avatar dashboard-player-avatar-operator">
-                    {playerInitials(player.name)}
-                  </span>
+                  <img
+                    className="dashboard-player-character"
+                    src="/images/character.png"
+                    alt=""
+                    loading="lazy"
+                    decoding="async"
+                  />
+                  <span className="dashboard-avatar-initials">{playerInitials(player.name)}</span>
                   <span
                     className={online ? 'dashboard-status-light online' : 'dashboard-status-light offline'}
                     aria-label={online ? dictionary.states.connected : dictionary.states.disconnected}
@@ -1304,9 +1309,14 @@ function TrackedPanel({
         <div className="dashboard-tracked-editor">
           <div className="dashboard-tracked-profile">
             <span className="dashboard-player-avatar-wrap large">
-              <span className="dashboard-player-avatar dashboard-player-avatar-operator large">
-                {playerInitials(selectedTracked.name)}
-              </span>
+              <img
+                className="dashboard-player-character large"
+                src="/images/character.png"
+                alt=""
+                loading="lazy"
+                decoding="async"
+              />
+              <span className="dashboard-avatar-initials">{playerInitials(selectedTracked.name)}</span>
               <span
                 className={
                   selectedTrackedOnline

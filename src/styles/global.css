@@ -1063,10 +1063,11 @@ a {
 }
 
 .dashboard-tracked-panel-featured .dashboard-tracked-card {
-  min-height: 12.6rem;
-  grid-template-columns: 1fr;
-  align-content: space-between;
-  gap: 0.8rem;
+  min-height: 7.9rem;
+  grid-template-columns: auto minmax(0, 1fr);
+  align-content: center;
+  align-items: center;
+  gap: 0.9rem;
   padding: 1rem;
   overflow: hidden;
   background:
@@ -1119,12 +1120,17 @@ a {
 
 .dashboard-player-avatar-wrap {
   position: relative;
-  display: block;
-  width: fit-content;
+  display: grid;
+  width: 3rem;
+  height: 3.4rem;
+  place-items: end center;
+  flex: 0 0 auto;
 }
 
 .dashboard-player-avatar-wrap.large {
   align-self: start;
+  width: 4.2rem;
+  height: 4.8rem;
 }
 
 .dashboard-player-avatar {
@@ -1225,6 +1231,42 @@ a {
   font-size: 0.95rem;
 }
 
+.dashboard-player-character {
+  position: relative;
+  z-index: 1;
+  width: 2.9rem;
+  height: 3.4rem;
+  object-fit: contain;
+  object-position: center bottom;
+  mix-blend-mode: multiply;
+  filter: saturate(1.05) contrast(1.06) drop-shadow(0 12px 18px rgba(0, 0, 0, 0.34));
+  pointer-events: none;
+  user-select: none;
+}
+
+.dashboard-player-character.large {
+  width: 4rem;
+  height: 4.8rem;
+}
+
+.dashboard-avatar-initials {
+  position: absolute;
+  z-index: 2;
+  right: -0.1rem;
+  bottom: 0.05rem;
+  display: grid;
+  width: 1.3rem;
+  height: 1.3rem;
+  place-items: center;
+  border: 1px solid rgba(255, 255, 255, 0.16);
+  border-radius: 999px;
+  background: rgba(10, 10, 10, 0.74);
+  color: rgba(255, 255, 255, 0.88);
+  font-size: 0.58rem;
+  font-weight: 840;
+  box-shadow: 0 8px 18px rgba(0, 0, 0, 0.32);
+}
+
 .dashboard-tracked-panel-featured .dashboard-player-avatar {
   width: 4.35rem;
   height: 4.35rem;
@@ -1234,6 +1276,17 @@ a {
     radial-gradient(circle at 34% 24%, rgba(255, 255, 255, 0.24), transparent 26%),
     linear-gradient(140deg, color-mix(in srgb, var(--team-color, #ff4b22) 55%, transparent), rgba(255, 255, 255, 0.07));
   font-size: 1.1rem;
+}
+
+.dashboard-tracked-panel-featured .dashboard-player-avatar-wrap {
+  width: 4.4rem;
+  height: 5rem;
+  justify-self: start;
+}
+
+.dashboard-tracked-panel-featured .dashboard-player-character {
+  width: 4.2rem;
+  height: 5rem;
 }
 
 .dashboard-tracked-card > span:not(.dashboard-player-avatar) {
@@ -1272,6 +1325,7 @@ a {
 .dashboard-tracked-signal {
   position: relative;
   z-index: 1;
+  grid-column: 2;
   width: fit-content;
   border: 1px solid rgba(255, 255, 255, 0.09);
   border-radius: 999px;
