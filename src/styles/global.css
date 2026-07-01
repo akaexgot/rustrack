@@ -1016,7 +1016,7 @@ a {
 }
 
 .dashboard-tracked-panel-featured .dashboard-tracked-grid {
-  grid-template-columns: repeat(auto-fit, minmax(172px, 1fr));
+  grid-template-columns: repeat(auto-fill, minmax(148px, 1fr));
   gap: 0.85rem;
 }
 
@@ -1026,7 +1026,7 @@ a {
 }
 
 .dashboard-tracked-panel-featured {
-  min-height: 34rem;
+  min-height: 24rem;
   border-color: rgba(255, 75, 34, 0.24);
   background:
     radial-gradient(circle at 18% 0%, rgba(255, 75, 34, 0.18), transparent 34%),
@@ -1063,13 +1063,14 @@ a {
 }
 
 .dashboard-tracked-panel-featured .dashboard-tracked-card {
-  min-height: 8.9rem;
-  grid-template-columns: auto minmax(0, 1fr);
-  align-content: center;
-  align-items: center;
-  gap: 0.9rem;
-  padding: 1rem;
+  min-height: 14.5rem;
+  grid-template-columns: 1fr;
+  align-content: start;
+  justify-items: center;
+  gap: 0.55rem;
+  padding: 0.85rem 0.75rem 0.75rem;
   overflow: hidden;
+  text-align: center;
   background:
     radial-gradient(circle at 18% 12%, color-mix(in srgb, var(--team-color, #ff4b22) 18%, transparent), transparent 38%),
     linear-gradient(180deg, rgba(255, 255, 255, 0.075), rgba(255, 255, 255, 0.035));
@@ -1121,7 +1122,7 @@ a {
 .dashboard-player-avatar-wrap {
   position: relative;
   display: grid;
-  width: 3.8rem;
+  width: 3.4rem;
   height: 5.2rem;
   place-items: end center;
   flex: 0 0 auto;
@@ -1129,8 +1130,8 @@ a {
 
 .dashboard-player-avatar-wrap.large {
   align-self: start;
-  width: 5.2rem;
-  height: 7.2rem;
+  width: 5rem;
+  height: 8.2rem;
 }
 
 .dashboard-player-avatar {
@@ -1235,19 +1236,17 @@ a {
   position: relative;
   z-index: 1;
   width: auto;
-  height: 5.2rem;
+  height: 5.1rem;
   max-width: none;
   object-fit: contain;
   object-position: center bottom;
   filter: saturate(1.08) contrast(1.08) drop-shadow(0 14px 20px rgba(0, 0, 0, 0.38));
   pointer-events: none;
-  transform: scale(1.35);
-  transform-origin: center bottom;
   user-select: none;
 }
 
 .dashboard-player-character.large {
-  height: 7.1rem;
+  height: 8rem;
   max-width: none;
 }
 
@@ -1281,13 +1280,13 @@ a {
 }
 
 .dashboard-tracked-panel-featured .dashboard-player-avatar-wrap {
-  width: 5.4rem;
-  height: 7.4rem;
-  justify-self: start;
+  width: 5rem;
+  height: 8rem;
+  justify-self: center;
 }
 
 .dashboard-tracked-panel-featured .dashboard-player-character {
-  height: 7.4rem;
+  height: 8rem;
   max-width: none;
 }
 
@@ -1314,21 +1313,19 @@ a {
 }
 
 .dashboard-tracked-panel-featured .dashboard-tracked-card strong {
-  font-size: 1.04rem;
+  font-size: 1rem;
 }
 
 .dashboard-tracked-panel-featured .dashboard-status-pill {
-  position: absolute;
-  top: 0.85rem;
-  right: 0.85rem;
-  z-index: 2;
+  min-width: 0;
+  padding-inline: 0.65rem;
 }
 
 .dashboard-tracked-signal {
   position: relative;
   z-index: 1;
-  grid-column: 2;
   width: fit-content;
+  justify-self: center;
   border: 1px solid rgba(255, 255, 255, 0.09);
   border-radius: 999px;
   padding: 0.3rem 0.55rem;
@@ -1367,6 +1364,52 @@ a {
   margin-top: 1rem;
   border-top: 1px solid rgba(255, 255, 255, 0.08);
   padding-top: 1rem;
+}
+
+.dashboard-modal-backdrop {
+  position: fixed;
+  z-index: 80;
+  inset: 0;
+  display: grid;
+  place-items: center;
+  padding: 1.25rem;
+  background:
+    radial-gradient(circle at 35% 20%, rgba(255, 75, 34, 0.16), transparent 28%),
+    rgba(0, 0, 0, 0.66);
+  backdrop-filter: blur(18px);
+}
+
+.dashboard-tracked-modal {
+  width: min(100%, 760px);
+  max-height: min(86vh, 760px);
+  overflow: hidden;
+  border: 1px solid rgba(255, 75, 34, 0.28);
+  border-radius: 1rem;
+  background:
+    radial-gradient(circle at 10% 0%, rgba(255, 75, 34, 0.16), transparent 34%),
+    radial-gradient(circle at 88% 18%, rgba(50, 213, 131, 0.12), transparent 30%),
+    linear-gradient(180deg, rgba(255, 255, 255, 0.09), rgba(255, 255, 255, 0.045)),
+    rgba(12, 12, 12, 0.94);
+  box-shadow:
+    0 34px 110px rgba(0, 0, 0, 0.58),
+    inset 0 1px 0 rgba(255, 255, 255, 0.08);
+}
+
+.dashboard-tracked-modal .dashboard-tracked-editor {
+  max-height: min(86vh, 760px);
+  margin: 0;
+  overflow-y: auto;
+  border-top: 0;
+  padding: 1rem;
+  scrollbar-width: thin;
+  scrollbar-color: rgba(255, 75, 34, 0.55) rgba(255, 255, 255, 0.08);
+}
+
+.dashboard-tracked-modal .dashboard-tracked-profile {
+  border-color: rgba(255, 75, 34, 0.18);
+  background:
+    linear-gradient(180deg, rgba(255, 255, 255, 0.075), rgba(255, 255, 255, 0.035)),
+    rgba(255, 255, 255, 0.035);
 }
 
 .dashboard-tracked-profile {

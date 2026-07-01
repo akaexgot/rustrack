@@ -17,7 +17,6 @@ import {
   Users,
   Volume2,
   VolumeX,
-  UserRound,
   X,
   type LucideIcon,
 } from 'lucide-react';
@@ -1265,12 +1264,12 @@ function TrackedPanel({
                 className={selected ? 'dashboard-tracked-card selected' : 'dashboard-tracked-card'}
                 style={{ '--team-color': groupColor } as CSSProperties}
                 type="button"
-                onClick={() => onSelect(selected ? null : player.id)}
+                onClick={() => onSelect(player.id)}
               >
                 <span className="dashboard-player-avatar-wrap">
                   <img
                     className="dashboard-player-character"
-                    src="/images/character.png"
+                    src="/images/character-cutout.png"
                     alt=""
                     loading="lazy"
                     decoding="async"
@@ -1306,148 +1305,153 @@ function TrackedPanel({
       )}
 
       {selectedTracked ? (
-        <div className="dashboard-tracked-editor">
-          <div className="dashboard-tracked-profile">
-            <span className="dashboard-player-avatar-wrap large">
-              <img
-                className="dashboard-player-character large"
-                src="/images/character.png"
-                alt=""
-                loading="lazy"
-                decoding="async"
-              />
-              <span className="dashboard-avatar-initials">{playerInitials(selectedTracked.name)}</span>
-              <span
-                className={
-                  selectedTrackedOnline
-                    ? 'dashboard-status-light online'
-                    : 'dashboard-status-light offline'
-                }
-              />
-            </span>
-            <div>
-              <strong title={selectedTracked.name}>{selectedTracked.name}</strong>
-              <span title={selectedTracked.serverName}>{selectedTracked.serverName}</span>
-            </div>
-            <span
-              className={
-                selectedTrackedOnline
-                  ? 'dashboard-status-pill online'
-                  : 'dashboard-status-pill offline'
-              }
-            >
-              {selectedTrackedOnline ? dictionary.dashboard.onlineStatus : dictionary.dashboard.offlineStatus}
-            </span>
-            <button type="button" onClick={() => onSelect(null)} aria-label={dictionary.actions.close}>
-              <X size={15} aria-hidden />
-            </button>
-          </div>
-
-          <div className="dashboard-player-intel">
-            <span>
-              <MessageSquare size={14} aria-hidden />
-              {selectedTracked.notes.length} {dictionary.dashboard.notes.toLowerCase()}
-            </span>
-            <span>
-              <Tag size={14} aria-hidden />
-              {selectedTracked.tags.length} {dictionary.dashboard.tags.toLowerCase()}
-            </span>
-            <span className="dashboard-intel-group">
-              <Users size={14} aria-hidden />
-              {selectedTracked.group ?? dictionary.dashboard.noGroup}
-            </span>
-          </div>
-
-          <div className="dashboard-section-label">{dictionary.dashboard.group}</div>
-          <div className="dashboard-group-editor">
-            <div className="dashboard-inline-input">
-              <Users size={16} aria-hidden />
-              <input
-                value={groupDraft}
-                onChange={(event) => onGroupDraft(event.target.value)}
-                placeholder={dictionary.dashboard.groupPlaceholder}
-              />
-              <button type="button" onClick={() => onAssignGroup(groupDraft)}>
-                <Plus size={15} aria-hidden />
-              </button>
-            </div>
-            {selectedTracked.group ? (
-              <button className="dashboard-group-chip active" type="button" onClick={onClearGroup}>
-                <span style={{ background: groupColorFor(selectedTracked.group) }} />
-                {selectedTracked.group}
-                <X size={12} aria-hidden />
-              </button>
-            ) : null}
-          </div>
-
-          <div className="dashboard-group-list">
-            {defaultGroups.map((group) => (
-              <button key={group} type="button" onClick={() => onAssignGroup(group)}>
-                <span style={{ background: groupColorFor(group) }} />
-                {group}
-              </button>
-            ))}
-          </div>
-
-          <div className="dashboard-section-label">{dictionary.dashboard.tags}</div>
-          <div className="dashboard-tag-list">
-            {selectedTracked.tags.length ? (
-              selectedTracked.tags.map((tag) => (
-                <button key={tag} type="button" onClick={() => onRemoveTag(tag)}>
-                  {tag}
-                  <X size={12} aria-hidden />
+        <div className="dashboard-modal-backdrop" role="presentation" onMouseDown={() => onSelect(null)}>
+          <div
+            className="dashboard-tracked-modal"
+            role="dialog"
+            aria-modal="true"
+            aria-label={selectedTracked.name}
+            onMouseDown={(event) => event.stopPropagation()}
+          >
+            <div className="dashboard-tracked-editor">
+              <div className="dashboard-tracked-profile">
+                <span className="dashboard-player-avatar-wrap large">
+                  <img
+                    className="dashboard-player-character large"
+                    src="/images/character-cutout.png"
+                    alt=""
+                    loading="lazy"
+                    decoding="async"
+                  />
+                  <span className="dashboard-avatar-initials">{playerInitials(selectedTracked.name)}</span>
+                  <span
+                    className={
+                      selectedTrackedOnline
+                        ? 'dashboard-status-light online'
+                        : 'dashboard-status-light offline'
+                    }
+                  />
+                </span>
+                <div>
+                  <strong title={selectedTracked.name}>{selectedTracked.name}</strong>
+                  <span title={selectedTracked.serverName}>{selectedTracked.serverName}</span>
+                </div>
+                <span
+                  className={
+                    selectedTrackedOnline
+                      ? 'dashboard-status-pill online'
+                      : 'dashboard-status-pill offline'
+                  }
+                >
+                  {selectedTrackedOnline ? dictionary.dashboard.onlineStatus : dictionary.dashboard.offlineStatus}
+                </span>
+                <button type="button" onClick={() => onSelect(null)} aria-label={dictionary.actions.close}>
+                  <X size={15} aria-hidden />
                 </button>
-              ))
-            ) : (
-              <span>{dictionary.dashboard.noTags}</span>
-            )}
-          </div>
+              </div>
 
-          <div className="dashboard-inline-input">
-            <Tag size={16} aria-hidden />
-            <input
-              value={tagDraft}
-              onChange={(event) => onTagDraft(event.target.value)}
-              placeholder={dictionary.dashboard.tagPlaceholder}
-            />
-            <button type="button" onClick={() => onAddTag(tagDraft)}>
-              <Plus size={15} aria-hidden />
-            </button>
-          </div>
+              <div className="dashboard-player-intel">
+                <span>
+                  <MessageSquare size={14} aria-hidden />
+                  {selectedTracked.notes.length} {dictionary.dashboard.notes.toLowerCase()}
+                </span>
+                <span>
+                  <Tag size={14} aria-hidden />
+                  {selectedTracked.tags.length} {dictionary.dashboard.tags.toLowerCase()}
+                </span>
+                <span className="dashboard-intel-group">
+                  <Users size={14} aria-hidden />
+                  {selectedTracked.group ?? dictionary.dashboard.noGroup}
+                </span>
+              </div>
 
-          <div className="dashboard-section-label">{dictionary.dashboard.quickTags}</div>
-          <div className="dashboard-chips muted">
-            {defaultTags.map((tag) => (
-              <button key={tag} type="button" onClick={() => onAddTag(tag)}>
-                {tag}
+              <div className="dashboard-section-label">{dictionary.dashboard.group}</div>
+              <div className="dashboard-group-editor">
+                <div className="dashboard-inline-input">
+                  <Users size={16} aria-hidden />
+                  <input
+                    value={groupDraft}
+                    onChange={(event) => onGroupDraft(event.target.value)}
+                    placeholder={dictionary.dashboard.groupPlaceholder}
+                  />
+                  <button type="button" onClick={() => onAssignGroup(groupDraft)}>
+                    <Plus size={15} aria-hidden />
+                  </button>
+                </div>
+                {selectedTracked.group ? (
+                  <button className="dashboard-group-chip active" type="button" onClick={onClearGroup}>
+                    <span style={{ background: groupColorFor(selectedTracked.group) }} />
+                    {selectedTracked.group}
+                    <X size={12} aria-hidden />
+                  </button>
+                ) : null}
+              </div>
+
+              <div className="dashboard-group-list">
+                {defaultGroups.map((group) => (
+                  <button key={group} type="button" onClick={() => onAssignGroup(group)}>
+                    <span style={{ background: groupColorFor(group) }} />
+                    {group}
+                  </button>
+                ))}
+              </div>
+
+              <div className="dashboard-section-label">{dictionary.dashboard.tags}</div>
+              <div className="dashboard-tag-list">
+                {selectedTracked.tags.length ? (
+                  selectedTracked.tags.map((tag) => (
+                    <button key={tag} type="button" onClick={() => onRemoveTag(tag)}>
+                      {tag}
+                      <X size={12} aria-hidden />
+                    </button>
+                  ))
+                ) : (
+                  <span>{dictionary.dashboard.noTags}</span>
+                )}
+              </div>
+
+              <div className="dashboard-inline-input">
+                <Tag size={16} aria-hidden />
+                <input
+                  value={tagDraft}
+                  onChange={(event) => onTagDraft(event.target.value)}
+                  placeholder={dictionary.dashboard.tagPlaceholder}
+                />
+                <button type="button" onClick={() => onAddTag(tagDraft)}>
+                  <Plus size={15} aria-hidden />
+                </button>
+              </div>
+
+              <div className="dashboard-section-label">{dictionary.dashboard.quickTags}</div>
+              <div className="dashboard-chips muted">
+                {defaultTags.map((tag) => (
+                  <button key={tag} type="button" onClick={() => onAddTag(tag)}>
+                    {tag}
+                  </button>
+                ))}
+              </div>
+
+              <textarea
+                value={noteDraft}
+                onChange={(event) => onNoteDraft(event.target.value)}
+                placeholder={dictionary.dashboard.notePlaceholder}
+              />
+              <button className="dashboard-primary" type="button" onClick={onAddNote}>
+                {dictionary.actions.addNote}
               </button>
-            ))}
-          </div>
 
-          <textarea
-            value={noteDraft}
-            onChange={(event) => onNoteDraft(event.target.value)}
-            placeholder={dictionary.dashboard.notePlaceholder}
-          />
-          <button className="dashboard-primary" type="button" onClick={onAddNote}>
-            {dictionary.actions.addNote}
-          </button>
-
-          {selectedTracked.notes.length ? (
-            <div className="dashboard-note-list">
-              <div className="dashboard-section-label">{dictionary.dashboard.notesHistory}</div>
-              {selectedTracked.notes.map((note) => (
-                <p className="dashboard-note" key={note}>
-                  {note}
-                </p>
-              ))}
+              {selectedTracked.notes.length ? (
+                <div className="dashboard-note-list">
+                  <div className="dashboard-section-label">{dictionary.dashboard.notesHistory}</div>
+                  {selectedTracked.notes.map((note) => (
+                    <p className="dashboard-note" key={note}>
+                      {note}
+                    </p>
+                  ))}
+                </div>
+              ) : null}
             </div>
-          ) : null}
-        </div>
-      ) : tracked.length ? (
-        <div className="dashboard-track-hint">
-          <UserRound size={17} aria-hidden />
-          {dictionary.dashboard.selectTrackedPlayer}
+          </div>
         </div>
       ) : null}
     </section>
