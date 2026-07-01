@@ -1144,7 +1144,7 @@ a {
   z-index: 1;
 }
 
-.dashboard-untrack-button {
+.dashboard-tracked-card > .dashboard-untrack-button {
   position: absolute;
   z-index: 4;
   top: 0.55rem;
@@ -1166,15 +1166,15 @@ a {
     color 160ms ease;
 }
 
-.dashboard-tracked-card:hover .dashboard-untrack-button,
-.dashboard-tracked-card:focus-visible .dashboard-untrack-button,
-.dashboard-untrack-button:focus-visible {
+.dashboard-tracked-card:hover > .dashboard-untrack-button,
+.dashboard-tracked-card:focus-visible > .dashboard-untrack-button,
+.dashboard-tracked-card > .dashboard-untrack-button:focus-visible {
   opacity: 1;
   transform: translateY(0);
 }
 
-.dashboard-untrack-button:hover,
-.dashboard-untrack-button:focus-visible {
+.dashboard-tracked-card > .dashboard-untrack-button:hover,
+.dashboard-tracked-card > .dashboard-untrack-button:focus-visible {
   border-color: rgba(240, 68, 56, 0.42);
   color: #fda29b;
 }
