@@ -21,7 +21,7 @@ import {
   X,
   type LucideIcon,
 } from 'lucide-react';
-import { useEffect, useMemo, useState, type CSSProperties } from 'react';
+import { useEffect, useMemo, useRef, useState, type CSSProperties } from 'react';
 
 import {
   getPopularRustServers,
@@ -71,6 +71,7 @@ const defaultGroups = ['Team rojo', 'Team azul', 'Vecinos', 'Raid Targets', 'Ali
 export default function DashboardApp({ locale, dictionary, initialQuery = '' }: Props) {
   const supabase = useMemo(() => createBrowserSupabaseClient(), []);
   const initialServer = useMemo(() => findBestServer(initialQuery), [initialQuery]);
+  const trackedPresenceRef = useRef<Record<string, boolean>>({});
   const [query, setQuery] = useState(initialQuery || initialServer.ip);
   const [servers, setServers] = useState<ServerSummary[]>(popularServers);
   const [selectedServerId, setSelectedServerId] = useState(initialServer.id);
@@ -214,6 +215,80 @@ export default function DashboardApp({ locale, dictionary, initialQuery = '' }: 
       active = false;
     };
   }, [supabase, userId]);
+
+  useEffect(() => {
+    if (!selectedServerId || selectionRequired) return;
+
+    let active = true;
+
+    async function refreshServerStatus() {
+      try {
+        const detail = await getRustServer(selectedServerId);
+        if (!active) return;
+
+        setSelectedServerOverride(detail);
+        setServers((current) =>
+          current.map((server) => (server.id === detail.id ? detail : server)),
+        );
+      } catch {
+        // Silent refreshes should not interrupt the tactical panel.
+      }
+    }
+
+    const intervalId = window.setInterval(refreshServerStatus, 45000);
+    const handleVisibilityChange = () => {
+      if (document.visibilityState === 'visible') void refreshServerStatus();
+    };
+
+    document.addEventListener('visibilitychange', handleVisibilityChange);
+
+    return () => {
+      active = false;
+      window.clearInterval(intervalId);
+      document.removeEventListener('visibilitychange', handleVisibilityChange);
+    };
+  }, [selectedServerId, selectionRequired]);
+
+  useEffect(() => {
+    if (!selectedServer) {
+      trackedPresenceRef.current = {};
+      return;
+    }
+
+    const serverTrackedPlayers = tracked.filter((player) => player.serverId === selectedServer.id);
+    const previousPresence = trackedPresenceRef.current;
+    const nextPresence: Record<string, boolean> = {};
+
+    serverTrackedPlayers.forEach((player) => {
+      const online = isTrackedOnline(player, selectedServer);
+      nextPresence[player.id] = online;
+
+      if (previousPresence[player.id] === undefined || previousPresence[player.id] === online) {
+        return;
+      }
+
+      if (online && alertSettings.trackedOnline) {
+        speak(locale === 'es' ? `${player.name} se ha conectado.` : `${player.name} is online.`);
+      }
+
+      if (!online && alertSettings.trackedOffline) {
+        speak(
+          locale === 'es'
+            ? `${player.name} se ha desconectado.`
+            : `${player.name} went offline.`,
+        );
+      }
+    });
+
+    trackedPresenceRef.current = nextPresence;
+  }, [
+    alertSettings.trackedOffline,
+    alertSettings.trackedOnline,
+    locale,
+    selectedServer,
+    tracked,
+    voiceEnabled,
+  ]);
 
   async function submitSearch() {
     const cleanQuery = query.trim();
