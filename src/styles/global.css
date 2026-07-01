@@ -473,6 +473,11 @@ a {
   line-height: 0.98;
   font-weight: 760;
   letter-spacing: 0;
+  display: -webkit-box;
+  overflow: hidden;
+  overflow-wrap: anywhere;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 2;
 }
 
 .dashboard-hero p:not(.home-eyebrow) {
@@ -481,6 +486,10 @@ a {
   color: rgba(255, 255, 255, 0.62);
   font-size: 1.05rem;
   line-height: 1.65;
+  display: -webkit-box;
+  overflow: hidden;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 2;
 }
 
 .dashboard-mode-switch {
@@ -986,6 +995,9 @@ a {
 }
 
 .dashboard-server-card small {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
   color: rgba(255, 255, 255, 0.52);
 }
 
@@ -1203,16 +1215,26 @@ a {
 }
 
 .dashboard-tracked-profile strong,
-.dashboard-tracked-profile span {
+.dashboard-tracked-profile > div > span {
   display: block;
 }
 
+.dashboard-tracked-profile > div {
+  min-width: 0;
+}
+
 .dashboard-tracked-profile strong {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
   color: white;
 }
 
-.dashboard-tracked-profile span {
+.dashboard-tracked-profile > div > span {
   margin-top: 0.2rem;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
   color: rgba(255, 255, 255, 0.52);
   font-size: 0.86rem;
 }

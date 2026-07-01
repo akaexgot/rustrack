@@ -518,7 +518,7 @@ export default function DashboardApp({ locale, dictionary, initialQuery = '' }: 
           <p className="home-eyebrow">
             {userId ? dictionary.states.savedInCloud : dictionary.states.savedInMemory}
           </p>
-          <h1>{selectedServer?.name ?? emptyTitle}</h1>
+          <h1 title={selectedServer?.name ?? emptyTitle}>{selectedServer?.name ?? emptyTitle}</h1>
           <p>{selectedServer?.description ?? dictionary.dashboard.noExactServer}</p>
           {selectedServer ? (
             <div className="dashboard-mode-switch">
@@ -1043,7 +1043,7 @@ function ServerSuggestion({
       type="button"
       onClick={onSelect}
     >
-      <span>{server.name}</span>
+      <span title={server.name}>{server.name}</span>
       <strong>
         {server.players}/{server.maxPlayers}
       </strong>
@@ -1163,8 +1163,8 @@ function TrackedPanel({
               />
             </span>
             <div>
-              <strong>{selectedTracked.name}</strong>
-              <span>{selectedTracked.serverName}</span>
+              <strong title={selectedTracked.name}>{selectedTracked.name}</strong>
+              <span title={selectedTracked.serverName}>{selectedTracked.serverName}</span>
             </div>
             <span
               className={
