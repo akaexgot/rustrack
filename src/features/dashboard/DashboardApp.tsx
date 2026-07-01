@@ -1270,7 +1270,7 @@ function TrackedPanel({
                 <span className="dashboard-player-avatar-wrap">
                   <img
                     className="dashboard-player-character"
-                    src="/images/character-cutout.png"
+                    src="/images/character.png"
                     alt=""
                     loading="lazy"
                     decoding="async"
@@ -1311,7 +1311,7 @@ function TrackedPanel({
             <span className="dashboard-player-avatar-wrap large">
               <img
                 className="dashboard-player-character large"
-                src="/images/character-cutout.png"
+                src="/images/character.png"
                 alt=""
                 loading="lazy"
                 decoding="async"

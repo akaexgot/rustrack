@@ -1121,16 +1121,16 @@ a {
 .dashboard-player-avatar-wrap {
   position: relative;
   display: grid;
-  width: 3.4rem;
-  height: 4.7rem;
+  width: 3.8rem;
+  height: 5.2rem;
   place-items: end center;
   flex: 0 0 auto;
 }
 
 .dashboard-player-avatar-wrap.large {
   align-self: start;
-  width: 4.4rem;
-  height: 6.2rem;
+  width: 5.2rem;
+  height: 7.2rem;
 }
 
 .dashboard-player-avatar {
@@ -1235,18 +1235,20 @@ a {
   position: relative;
   z-index: 1;
   width: auto;
-  height: 4.45rem;
-  max-width: 3.2rem;
+  height: 5.2rem;
+  max-width: none;
   object-fit: contain;
   object-position: center bottom;
   filter: saturate(1.08) contrast(1.08) drop-shadow(0 14px 20px rgba(0, 0, 0, 0.38));
   pointer-events: none;
+  transform: scale(1.35);
+  transform-origin: center bottom;
   user-select: none;
 }
 
 .dashboard-player-character.large {
-  height: 6rem;
-  max-width: 4.1rem;
+  height: 7.1rem;
+  max-width: none;
 }
 
 .dashboard-avatar-initials {
@@ -1279,14 +1281,14 @@ a {
 }
 
 .dashboard-tracked-panel-featured .dashboard-player-avatar-wrap {
-  width: 4.5rem;
-  height: 6.6rem;
+  width: 5.4rem;
+  height: 7.4rem;
   justify-self: start;
 }
 
 .dashboard-tracked-panel-featured .dashboard-player-character {
-  height: 6.5rem;
-  max-width: 4.3rem;
+  height: 7.4rem;
+  max-width: none;
 }
 
 .dashboard-tracked-card > span:not(.dashboard-player-avatar) {
