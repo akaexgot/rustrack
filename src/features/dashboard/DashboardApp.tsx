@@ -269,6 +269,7 @@ export default function DashboardApp({ locale, dictionary, initialQuery = '' }: 
 
       if (online && alertSettings.trackedOnline) {
         speak(locale === 'es' ? `${player.name} se ha conectado.` : `${player.name} is online.`);
+        notifyTrackedPresence(player, true);
       }
 
       if (!online && alertSettings.trackedOffline) {
@@ -277,6 +278,7 @@ export default function DashboardApp({ locale, dictionary, initialQuery = '' }: 
             ? `${player.name} se ha desconectado.`
             : `${player.name} went offline.`,
         );
+        notifyTrackedPresence(player, false);
       }
     });
 
@@ -368,6 +370,60 @@ export default function DashboardApp({ locale, dictionary, initialQuery = '' }: 
     speakNow(message);
   }
 
+  function notifyBrowser(title: string, body: string, tag: string) {
+    if (typeof window === 'undefined' || !('Notification' in window)) return;
+    if (Notification.permission !== 'granted') return;
+
+    try {
+      const notification = new Notification(title, {
+        body,
+        icon: '/favicon.svg',
+        tag,
+      });
+      notification.onclick = () => {
+        window.focus();
+        notification.close();
+      };
+    } catch {
+      // Some browsers can expose Notification but still block it in the current context.
+    }
+  }
+
+  async function requestNotificationsForFirstTrackedPlayer(player: GuestTrackedPlayer) {
+    if (tracked.length > 0) return;
+    if (typeof window === 'undefined' || !('Notification' in window)) return;
+    if (Notification.permission !== 'default') return;
+
+    try {
+      const permission = await Notification.requestPermission();
+      if (permission !== 'granted') return;
+
+      notifyBrowser(
+        locale === 'es' ? 'Notificaciones activadas' : 'Notifications enabled',
+        locale === 'es'
+          ? `Te avisare cuando ${player.name} cambie de estado.`
+          : `Rustrack will alert you when ${player.name} changes status.`,
+        `rustrack-permission-${player.id}`,
+      );
+    } catch {
+      // Permission prompts are browser-managed; failure should not block tracking.
+    }
+  }
+
+  function notifyTrackedPresence(player: GuestTrackedPlayer, online: boolean) {
+    notifyBrowser(
+      online
+        ? locale === 'es'
+          ? 'Jugador conectado'
+          : 'Player online'
+        : locale === 'es'
+          ? 'Jugador desconectado'
+          : 'Player offline',
+      `${player.name} - ${player.serverName}`,
+      `rustrack-presence-${player.id}`,
+    );
+  }
+
   function toggleVoice() {
     const nextValue = !voiceEnabled;
     setVoiceEnabled(nextValue);
@@ -446,6 +502,7 @@ export default function DashboardApp({ locale, dictionary, initialQuery = '' }: 
       notes: [],
     };
 
+    void requestNotificationsForFirstTrackedPlayer(nextTracked);
     setTracked((current) => [nextTracked, ...current]);
     if (supabase && userId) {
       saveTrackedPlayer(supabase, userId, nextTracked)
