@@ -1063,7 +1063,7 @@ a {
 }
 
 .dashboard-tracked-panel-featured .dashboard-tracked-card {
-  min-height: 7.9rem;
+  min-height: 8.9rem;
   grid-template-columns: auto minmax(0, 1fr);
   align-content: center;
   align-items: center;
@@ -1121,16 +1121,16 @@ a {
 .dashboard-player-avatar-wrap {
   position: relative;
   display: grid;
-  width: 3rem;
-  height: 3.4rem;
+  width: 3.4rem;
+  height: 4.7rem;
   place-items: end center;
   flex: 0 0 auto;
 }
 
 .dashboard-player-avatar-wrap.large {
   align-self: start;
-  width: 4.2rem;
-  height: 4.8rem;
+  width: 4.4rem;
+  height: 6.2rem;
 }
 
 .dashboard-player-avatar {
@@ -1234,19 +1234,19 @@ a {
 .dashboard-player-character {
   position: relative;
   z-index: 1;
-  width: 2.9rem;
-  height: 3.4rem;
+  width: auto;
+  height: 4.45rem;
+  max-width: 3.2rem;
   object-fit: contain;
   object-position: center bottom;
-  mix-blend-mode: multiply;
-  filter: saturate(1.05) contrast(1.06) drop-shadow(0 12px 18px rgba(0, 0, 0, 0.34));
+  filter: saturate(1.08) contrast(1.08) drop-shadow(0 14px 20px rgba(0, 0, 0, 0.38));
   pointer-events: none;
   user-select: none;
 }
 
 .dashboard-player-character.large {
-  width: 4rem;
-  height: 4.8rem;
+  height: 6rem;
+  max-width: 4.1rem;
 }
 
 .dashboard-avatar-initials {
@@ -1279,14 +1279,14 @@ a {
 }
 
 .dashboard-tracked-panel-featured .dashboard-player-avatar-wrap {
-  width: 4.4rem;
-  height: 5rem;
+  width: 4.5rem;
+  height: 6.6rem;
   justify-self: start;
 }
 
 .dashboard-tracked-panel-featured .dashboard-player-character {
-  width: 4.2rem;
-  height: 5rem;
+  height: 6.5rem;
+  max-width: 4.3rem;
 }
 
 .dashboard-tracked-card > span:not(.dashboard-player-avatar) {
