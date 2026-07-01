@@ -802,8 +802,9 @@ export default function DashboardApp({ locale, dictionary, initialQuery = '' }: 
             />
           </div>
 
-          <div className="dashboard-tactical-grid">
+          <div className="dashboard-tactical-command">
             <TrackedPanel
+              featured
               dictionary={dictionary}
               server={selectedServer}
               tracked={tracked}
@@ -822,17 +823,20 @@ export default function DashboardApp({ locale, dictionary, initialQuery = '' }: 
               onAssignGroup={assignGroup}
               onClearGroup={clearGroup}
             />
-            <OnlinePlayers
-              dictionary={dictionary}
-              players={selectedServer.connectedPlayers}
-              totalPlayers={selectedServer.players}
-              tracked={tracked}
-              compact={uiSettings.compactPlayers}
-              onTrack={trackPlayer}
-            />
-            <ActivityFeed dictionary={dictionary} server={selectedServer} tracked={tracked} />
-            <ProLockedPanel dictionary={dictionary} />
+            <div className="dashboard-tactical-context">
+              <OnlinePlayers
+                dictionary={dictionary}
+                players={selectedServer.connectedPlayers}
+                totalPlayers={selectedServer.players}
+                tracked={tracked}
+                compact={uiSettings.compactPlayers}
+                onTrack={trackPlayer}
+              />
+              <ActivityFeed dictionary={dictionary} server={selectedServer} tracked={tracked} />
+            </div>
           </div>
+
+          <ProLockedPanel dictionary={dictionary} />
         </section>
       ) : null}
 
@@ -1188,6 +1192,7 @@ function ServerSuggestion({
 }
 
 function TrackedPanel({
+  featured = false,
   dictionary,
   server,
   tracked,
@@ -1206,6 +1211,7 @@ function TrackedPanel({
   onAssignGroup,
   onClearGroup,
 }: {
+  featured?: boolean;
   dictionary: Dictionary;
   server: ServerSummary;
   tracked: GuestTrackedPlayer[];
@@ -1230,7 +1236,13 @@ function TrackedPanel({
     : false;
 
   return (
-    <section className="dashboard-panel dashboard-tracked-panel">
+    <section
+      className={
+        featured
+          ? 'dashboard-panel dashboard-tracked-panel dashboard-tracked-panel-featured'
+          : 'dashboard-panel dashboard-tracked-panel'
+      }
+    >
       <div className="dashboard-panel-heading">
         <div>
           <span>{dictionary.dashboard.trackedPlayers}</span>
@@ -1256,7 +1268,9 @@ function TrackedPanel({
                 onClick={() => onSelect(selected ? null : player.id)}
               >
                 <span className="dashboard-player-avatar-wrap">
-                  <span className="dashboard-player-avatar">{playerInitials(player.name)}</span>
+                  <span className="dashboard-player-avatar dashboard-player-avatar-operator">
+                    {playerInitials(player.name)}
+                  </span>
                   <span
                     className={online ? 'dashboard-status-light online' : 'dashboard-status-light offline'}
                     aria-label={online ? dictionary.states.connected : dictionary.states.disconnected}
@@ -1270,6 +1284,11 @@ function TrackedPanel({
                       : player.tags.slice(0, 2).join(' / ') || dictionary.dashboard.noTags}
                   </small>
                 </span>
+                {featured ? (
+                  <span className="dashboard-tracked-signal">
+                    {player.notes.length} {dictionary.dashboard.notes.toLowerCase()}
+                  </span>
+                ) : null}
                 <span className={online ? 'dashboard-status-pill online' : 'dashboard-status-pill offline'}>
                   {online ? dictionary.dashboard.onlineStatus : dictionary.dashboard.offlineStatus}
                 </span>
@@ -1285,7 +1304,9 @@ function TrackedPanel({
         <div className="dashboard-tracked-editor">
           <div className="dashboard-tracked-profile">
             <span className="dashboard-player-avatar-wrap large">
-              <span className="dashboard-player-avatar large">{playerInitials(selectedTracked.name)}</span>
+              <span className="dashboard-player-avatar dashboard-player-avatar-operator large">
+                {playerInitials(selectedTracked.name)}
+              </span>
               <span
                 className={
                   selectedTrackedOnline

@@ -1015,9 +1015,24 @@ a {
   margin-top: 1rem;
 }
 
+.dashboard-tracked-panel-featured .dashboard-tracked-grid {
+  grid-template-columns: repeat(auto-fit, minmax(172px, 1fr));
+  gap: 0.85rem;
+}
+
 .dashboard-tracked-panel {
   position: relative;
   overflow: hidden;
+}
+
+.dashboard-tracked-panel-featured {
+  min-height: 34rem;
+  border-color: rgba(255, 75, 34, 0.24);
+  background:
+    radial-gradient(circle at 18% 0%, rgba(255, 75, 34, 0.18), transparent 34%),
+    radial-gradient(circle at 82% 12%, rgba(50, 213, 131, 0.1), transparent 32%),
+    linear-gradient(180deg, rgba(255, 255, 255, 0.085), rgba(255, 255, 255, 0.04)),
+    rgba(10, 10, 10, 0.68);
 }
 
 .dashboard-tracked-panel::before {
@@ -1047,6 +1062,18 @@ a {
     background 180ms ease;
 }
 
+.dashboard-tracked-panel-featured .dashboard-tracked-card {
+  min-height: 12.6rem;
+  grid-template-columns: 1fr;
+  align-content: space-between;
+  gap: 0.8rem;
+  padding: 1rem;
+  overflow: hidden;
+  background:
+    radial-gradient(circle at 18% 12%, color-mix(in srgb, var(--team-color, #ff4b22) 18%, transparent), transparent 38%),
+    linear-gradient(180deg, rgba(255, 255, 255, 0.075), rgba(255, 255, 255, 0.035));
+}
+
 .dashboard-tracked-card::before {
   content: '';
   position: absolute;
@@ -1055,6 +1082,26 @@ a {
   border-radius: 0.75rem 0 0 0.75rem;
   background: var(--team-color, transparent);
   box-shadow: 0 0 20px color-mix(in srgb, var(--team-color, transparent) 60%, transparent);
+}
+
+.dashboard-tracked-panel-featured .dashboard-tracked-card::after {
+  content: '';
+  position: absolute;
+  right: -1.8rem;
+  bottom: -2.8rem;
+  width: 8rem;
+  height: 8rem;
+  border-radius: 999px;
+  background:
+    radial-gradient(circle at 50% 36%, rgba(255, 255, 255, 0.12), transparent 16%),
+    radial-gradient(circle, color-mix(in srgb, var(--team-color, #ff4b22) 32%, transparent), transparent 64%);
+  opacity: 0.62;
+  pointer-events: none;
+}
+
+.dashboard-tracked-panel-featured .dashboard-tracked-card > span {
+  position: relative;
+  z-index: 1;
 }
 
 .dashboard-tracked-card:hover,
@@ -1081,6 +1128,8 @@ a {
 }
 
 .dashboard-player-avatar {
+  position: relative;
+  z-index: 1;
   display: grid;
   width: 2.25rem;
   height: 2.25rem;
@@ -1093,6 +1142,32 @@ a {
   color: white;
   font-size: 0.8rem;
   font-weight: 800;
+  overflow: hidden;
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.16),
+    0 14px 30px rgba(0, 0, 0, 0.24);
+}
+
+.dashboard-player-avatar-operator::before,
+.dashboard-player-avatar-operator::after {
+  content: '';
+  position: absolute;
+  pointer-events: none;
+}
+
+.dashboard-player-avatar-operator::before {
+  inset: 17% 16% auto;
+  height: 24%;
+  border-radius: 999px;
+  background: linear-gradient(90deg, rgba(10, 10, 10, 0.82), rgba(255, 255, 255, 0.16));
+  box-shadow: 0 0 16px rgba(255, 75, 34, 0.18);
+}
+
+.dashboard-player-avatar-operator::after {
+  inset: auto 18% 8%;
+  height: 18%;
+  border-radius: 999px 999px 0.3rem 0.3rem;
+  background: rgba(0, 0, 0, 0.24);
 }
 
 .dashboard-status-light {
@@ -1150,6 +1225,17 @@ a {
   font-size: 0.95rem;
 }
 
+.dashboard-tracked-panel-featured .dashboard-player-avatar {
+  width: 4.35rem;
+  height: 4.35rem;
+  border-radius: 1.15rem;
+  border-color: color-mix(in srgb, var(--team-color, #ff4b22) 44%, rgba(255, 255, 255, 0.2));
+  background:
+    radial-gradient(circle at 34% 24%, rgba(255, 255, 255, 0.24), transparent 26%),
+    linear-gradient(140deg, color-mix(in srgb, var(--team-color, #ff4b22) 55%, transparent), rgba(255, 255, 255, 0.07));
+  font-size: 1.1rem;
+}
+
 .dashboard-tracked-card > span:not(.dashboard-player-avatar) {
   min-width: 0;
 }
@@ -1170,6 +1256,30 @@ a {
   margin-top: 0.15rem;
   color: rgba(255, 255, 255, 0.48);
   font-size: 0.76rem;
+}
+
+.dashboard-tracked-panel-featured .dashboard-tracked-card strong {
+  font-size: 1.04rem;
+}
+
+.dashboard-tracked-panel-featured .dashboard-status-pill {
+  position: absolute;
+  top: 0.85rem;
+  right: 0.85rem;
+  z-index: 2;
+}
+
+.dashboard-tracked-signal {
+  position: relative;
+  z-index: 1;
+  width: fit-content;
+  border: 1px solid rgba(255, 255, 255, 0.09);
+  border-radius: 999px;
+  padding: 0.3rem 0.55rem;
+  background: rgba(255, 255, 255, 0.06);
+  color: rgba(255, 255, 255, 0.62);
+  font-size: 0.76rem;
+  font-weight: 720;
 }
 
 .dashboard-tracked-card i {
@@ -1434,15 +1544,34 @@ a {
   gap: 0.7rem;
 }
 
-.dashboard-tactical-grid {
+.dashboard-tactical-command {
   display: grid;
-  grid-template-columns: minmax(300px, 0.9fr) minmax(340px, 1fr) minmax(300px, 0.85fr);
+  grid-template-columns: minmax(0, 1.55fr) minmax(300px, 0.75fr);
   gap: 1rem;
   align-items: start;
 }
 
-.dashboard-tactical-grid .dashboard-pro-panel {
-  grid-column: 1 / -1;
+.dashboard-tactical-context {
+  display: grid;
+  gap: 1rem;
+  align-content: start;
+}
+
+.dashboard-tactical-context .dashboard-panel {
+  border-color: rgba(255, 255, 255, 0.08);
+  background:
+    linear-gradient(180deg, rgba(255, 255, 255, 0.055), rgba(255, 255, 255, 0.025)),
+    rgba(10, 10, 10, 0.5);
+}
+
+.dashboard-tactical-context .dashboard-list.compact {
+  max-height: 18rem;
+}
+
+.dashboard-tactical-context .dashboard-feed {
+  max-height: 14rem;
+  overflow-y: auto;
+  padding-right: 0.25rem;
 }
 
 .dashboard-pro-panel {
@@ -1693,7 +1822,7 @@ a {
   .dashboard-hero,
   .dashboard-layout,
   .dashboard-grid.two,
-  .dashboard-tactical-grid,
+  .dashboard-tactical-command,
   .dashboard-settings-grid {
     grid-template-columns: 1fr;
   }
