@@ -1293,6 +1293,7 @@ function TrackedPanel({
   const selectedTrackedOnline = selectedTracked
     ? isTrackedOnline(selectedTracked, server)
     : false;
+  const groupedTracked = groupTrackedPlayers(tracked, dictionary.dashboard.defaultGroup);
 
   return (
     <>
@@ -1315,48 +1316,62 @@ function TrackedPanel({
 
         {tracked.length ? (
           <div className="dashboard-tracked-grid">
-            {tracked.map((player) => {
-              const selected = player.id === activeTrackedId;
-              const online = isTrackedOnline(player, server);
-              const groupColor = player.group ? groupColorFor(player.group) : undefined;
-              return (
-                <button
-                  key={player.id}
-                  className={selected ? 'dashboard-tracked-card selected' : 'dashboard-tracked-card'}
-                  style={{ '--team-color': groupColor } as CSSProperties}
-                  type="button"
-                  onClick={() => onSelect(player.id)}
-                >
-                  <span className="dashboard-player-avatar-wrap">
-                    <img
-                      className="dashboard-player-character"
-                      src="/images/character-cutout.png"
-                      alt=""
-                      loading="lazy"
-                      decoding="async"
-                    />
-                    <span className="dashboard-avatar-initials">{playerInitials(player.name)}</span>
-                    <span
-                      className={online ? 'dashboard-status-light online' : 'dashboard-status-light offline'}
-                      aria-label={online ? dictionary.states.connected : dictionary.states.disconnected}
-                    />
-                  </span>
-                  <span>
-                    <strong>{player.name}</strong>
-                    <small>{player.group ?? dictionary.dashboard.defaultGroup}</small>
-                  </span>
-                  {featured ? (
-                    <span className="dashboard-tracked-signal">
-                      {dictionary.dashboard.livesAtShort}{' '}
-                      {player.baseLocation || dictionary.states.unavailable}
-                    </span>
-                  ) : null}
-                  <span className={online ? 'dashboard-status-pill online' : 'dashboard-status-pill offline'}>
-                    {online ? dictionary.dashboard.onlineStatus : dictionary.dashboard.offlineStatus}
-                  </span>
-                </button>
-              );
-            })}
+            {groupedTracked.map((group) => (
+              <div className="dashboard-tracked-group" key={group.name}>
+                {featured ? (
+                  <div className="dashboard-tracked-group-heading">
+                    <span style={{ background: groupColorFor(group.name) }} />
+                    <strong>{group.name}</strong>
+                    <small>{group.players.length}</small>
+                  </div>
+                ) : null}
+                <div className="dashboard-tracked-group-grid">
+                  {group.players.map((player) => {
+                    const selected = player.id === activeTrackedId;
+                    const online = isTrackedOnline(player, server);
+                    const groupName = player.group ?? dictionary.dashboard.defaultGroup;
+                    const groupColor = groupColorFor(groupName);
+                    return (
+                      <button
+                        key={player.id}
+                        className={selected ? 'dashboard-tracked-card selected' : 'dashboard-tracked-card'}
+                        style={{ '--team-color': groupColor } as CSSProperties}
+                        type="button"
+                        onClick={() => onSelect(player.id)}
+                      >
+                        <span className="dashboard-player-avatar-wrap">
+                          <img
+                            className="dashboard-player-character"
+                            src="/images/character-cutout.png"
+                            alt=""
+                            loading="lazy"
+                            decoding="async"
+                          />
+                          <span className="dashboard-avatar-initials">{playerInitials(player.name)}</span>
+                          <span
+                            className={online ? 'dashboard-status-light online' : 'dashboard-status-light offline'}
+                            aria-label={online ? dictionary.states.connected : dictionary.states.disconnected}
+                          />
+                        </span>
+                        <span>
+                          <strong>{player.name}</strong>
+                          <small>{groupName}</small>
+                        </span>
+                        {featured ? (
+                          <span className="dashboard-tracked-signal">
+                            {dictionary.dashboard.livesAtShort}{' '}
+                            {player.baseLocation || dictionary.states.unavailable}
+                          </span>
+                        ) : null}
+                        <span className={online ? 'dashboard-status-pill online' : 'dashboard-status-pill offline'}>
+                          {online ? dictionary.dashboard.onlineStatus : dictionary.dashboard.offlineStatus}
+                        </span>
+                      </button>
+                    );
+                  })}
+                </div>
+              </div>
+            ))}
           </div>
         ) : (
           <p className="dashboard-empty">{dictionary.dashboard.noTracked}</p>
@@ -1815,6 +1830,29 @@ function isTrackedOnline(player: GuestTrackedPlayer, server: ServerSummary) {
 
 function countTrackedOnline(players: GuestTrackedPlayer[], server: ServerSummary) {
   return players.filter((player) => isTrackedOnline(player, server)).length;
+}
+
+function groupTrackedPlayers(players: GuestTrackedPlayer[], defaultGroup: string) {
+  const groups = new Map<string, GuestTrackedPlayer[]>();
+
+  [...players]
+    .sort((a, b) => {
+      const groupCompare = (a.group ?? defaultGroup).localeCompare(b.group ?? defaultGroup);
+      if (groupCompare !== 0) return groupCompare;
+      return a.name.localeCompare(b.name);
+    })
+    .forEach((player) => {
+      const groupName = player.group ?? defaultGroup;
+      groups.set(groupName, [...(groups.get(groupName) ?? []), player]);
+    });
+
+  return [...groups.entries()]
+    .map(([name, groupPlayers]) => ({ name, players: groupPlayers }))
+    .sort((a, b) => {
+      if (a.name === defaultGroup) return -1;
+      if (b.name === defaultGroup) return 1;
+      return a.name.localeCompare(b.name);
+    });
 }
 
 function isIpOnlyQuery(value: string) {
